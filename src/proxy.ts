@@ -1,4 +1,4 @@
-export { auth as middleware } from '@/auth';
+export { auth as proxy } from '@/auth';
 
 export const config = {
   // Protege tudo, menos os arquivos internos do Next, a própria rota de auth,
