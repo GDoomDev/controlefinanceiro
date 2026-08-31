@@ -81,3 +81,20 @@ export function planejarEstorno(
 
   return plano;
 }
+
+/**
+ * Estorno parcial em valor (spec, seção 6.2): nenhuma parcela é cancelada, o
+ * valor estornado vira crédito na competência informada. Use quando parte de
+ * uma compra maior foi devolvida, não a compra inteira — as parcelas seguem
+ * sendo cobradas normalmente.
+ */
+export function planejarEstornoParcial(
+  transactionId: string,
+  valorCentavos: Centavos,
+  competenciaCredito: Competencia,
+): { transactionId: string; valorCentavos: Centavos; competenciaCredito: Competencia } {
+  if (!Number.isInteger(valorCentavos) || valorCentavos <= 0) {
+    throw new Error(`Estorno parcial deve ser inteiro positivo em centavos: ${valorCentavos}`);
+  }
+  return { transactionId, valorCentavos, competenciaCredito };
+}

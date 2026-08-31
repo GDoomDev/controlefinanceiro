@@ -3,6 +3,7 @@ import {
   type ParcelaEstornavel,
   pendente,
   planejarEstorno,
+  planejarEstornoParcial,
   recebido,
   validarRecebimento,
 } from './reembolso';
@@ -107,5 +108,30 @@ describe('planejarEstorno', () => {
     expect(plano.creditos).toEqual([
       { transactionId: 'a1', valorCentavos: 8000, competenciaCredito: '2026-09' },
     ]);
+  });
+});
+
+// Compra de R$300 no cartão; devolveram só um item de R$50 — nenhuma parcela
+// é cancelada, o valor devolvido vira crédito.
+describe('planejarEstornoParcial', () => {
+  it('valor parcial válido gera exatamente um crédito, sem cancelamento', () => {
+    const credito = planejarEstornoParcial('t1', 5000, '2026-11');
+    expect(credito).toEqual({
+      transactionId: 't1',
+      valorCentavos: 5000,
+      competenciaCredito: '2026-11',
+    });
+  });
+
+  it('rejeita valor zero', () => {
+    expect(() => planejarEstornoParcial('t1', 0, '2026-11')).toThrow();
+  });
+
+  it('rejeita valor negativo', () => {
+    expect(() => planejarEstornoParcial('t1', -100, '2026-11')).toThrow();
+  });
+
+  it('rejeita valor não inteiro', () => {
+    expect(() => planejarEstornoParcial('t1', 100.5, '2026-11')).toThrow();
   });
 });
