@@ -1,0 +1,228 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Auth.js ────────────────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── Domínio ────────────────────────────────────────────────────────────────
+
+enum TipoTransacao {
+  DESPESA
+  RECEITA
+}
+
+enum MetodoPagamento {
+  CREDITO
+  DEBITO
+  PIX
+  DINHEIRO
+  BOLETO
+}
+
+enum StatusTransacao {
+  ATIVA
+  CANCELADA
+}
+
+enum StatusFatura {
+  ABERTA
+  FECHADA
+  PAGA
+}
+
+enum OrigemCredito {
+  REEMBOLSO
+  ESTORNO
+}
+
+model BudgetCategory {
+  id          String              @id @default(cuid())
+  nome        String              @unique
+  ordem       Int
+  /// 1..6 — slot da paleta categórica. Ver spec, seção 9.
+  corSlot     Int
+  arquivada   Boolean             @default(false)
+  subcategorias Subcategory[]
+  alocacoes   BudgetAllocation[]
+  transacoes  Transaction[]
+  recorrentes RecurringExpense[]
+}
+
+model Subcategory {
+  id               String          @id @default(cuid())
+  budgetCategoryId String
+  nome             String
+  arquivada        Boolean         @default(false)
+  budgetCategory   BudgetCategory  @relation(fields: [budgetCategoryId], references: [id])
+  transacoes       Transaction[]
+  recorrentes      RecurringExpense[]
+
+  @@unique([budgetCategoryId, nome])
+}
+
+model BudgetAllocation {
+  id               String         @id @default(cuid())
+  budgetCategoryId String
+  /// "YYYY-MM"
+  vigenteDe        String
+  valorCentavos    Int
+  budgetCategory   BudgetCategory @relation(fields: [budgetCategoryId], references: [id])
+
+  @@unique([budgetCategoryId, vigenteDe])
+}
+
+model Card {
+  id             String    @id @default(cuid())
+  nome           String    @unique
+  diaFechamento  Int
+  diaVencimento  Int
+  ativo          Boolean   @default(true)
+  faturas        Invoice[]
+  transacoes     Transaction[]
+  recorrentes    RecurringExpense[]
+}
+
+model Invoice {
+  id             String        @id @default(cuid())
+  cardId         String
+  /// "YYYY-MM" — mês do vencimento
+  competencia    String
+  /// "YYYY-MM-DD"
+  dataFechamento String
+  /// "YYYY-MM-DD"
+  dataVencimento String
+  status         StatusFatura  @default(ABERTA)
+  /// "YYYY-MM-DD"
+  pagaEm         String?
+  card           Card          @relation(fields: [cardId], references: [id])
+  transacoes     Transaction[]
+
+  @@unique([cardId, competencia])
+}
+
+model Transaction {
+  id                    String           @id @default(cuid())
+  tipo                  TipoTransacao
+  descricao             String
+  valorCentavos         Int
+  /// "YYYY-MM-DD" — data civil de São Paulo, nunca DateTime
+  data                  String
+  metodo                MetodoPagamento
+  cardId                String?
+  invoiceId             String?
+  budgetCategoryId      String?
+  subcategoryId         String?
+  /// "YYYY-MM" — carimbada na gravação, nunca recalculada sozinha
+  competencia           String
+  status                StatusTransacao  @default(ATIVA)
+  /// 0 = não é reembolsável
+  reembolsoAlvoCentavos Int              @default(0)
+  grupoParcelamentoId   String?
+  parcelaNum            Int              @default(1)
+  parcelaTotal          Int              @default(1)
+  recorrenciaId         String?
+
+  card             Card?             @relation(fields: [cardId], references: [id])
+  invoice          Invoice?          @relation(fields: [invoiceId], references: [id])
+  budgetCategory   BudgetCategory?   @relation(fields: [budgetCategoryId], references: [id])
+  subcategory      Subcategory?      @relation(fields: [subcategoryId], references: [id])
+  recorrencia      RecurringExpense? @relation(fields: [recorrenciaId], references: [id])
+  creditos         Credito[]
+
+  @@unique([recorrenciaId, competencia])
+  @@index([competencia])
+  @@index([grupoParcelamentoId])
+}
+
+model Credito {
+  id                 String        @id @default(cuid())
+  transactionId      String
+  valorCentavos      Int
+  /// "YYYY-MM-DD"
+  recebidoEm         String
+  /// "YYYY-MM" — competência em que o crédito é contabilizado
+  competenciaCredito String
+  origem             OrigemCredito
+  transaction        Transaction   @relation(fields: [transactionId], references: [id])
+
+  @@index([competenciaCredito])
+}
+
+model ExpectedIncome {
+  id            String @id @default(cuid())
+  /// "YYYY-MM"
+  competencia   String
+  descricao     String
+  valorCentavos Int
+
+  @@index([competencia])
+}
+
+model RecurringExpense {
+  id               String          @id @default(cuid())
+  descricao        String
+  valorCentavos    Int
+  diaDoMes         Int
+  budgetCategoryId String
+  subcategoryId    String
+  metodo           MetodoPagamento
+  cardId           String?
+  /// "YYYY-MM"
+  inicio           String
+  /// "YYYY-MM"
+  fim              String?
+  ativa            Boolean         @default(true)
+
+  budgetCategory BudgetCategory @relation(fields: [budgetCategoryId], references: [id])
+  subcategory    Subcategory    @relation(fields: [subcategoryId], references: [id])
+  card           Card?          @relation(fields: [cardId], references: [id])
+  transacoes     Transaction[]
+}
