@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { faturaDaCompetencia, faturaDaCompra, faturasDasParcelas } from './fatura';
+import {
+  type CreditoDaFatura,
+  type TransacaoDaFatura,
+  faturaDaCompetencia,
+  faturaDaCompra,
+  faturasDasParcelas,
+  totalFatura,
+} from './fatura';
 
 // Cartão do exemplo do spec: fecha 25, vence 5 (vencimento no mês seguinte).
 const FECHA_25_VENCE_5 = { diaFechamento: 25, diaVencimento: 5 };
@@ -111,5 +118,49 @@ describe('faturasDasParcelas', () => {
     expect(() =>
       faturasDasParcelas({ ano: 2026, mes: 8, dia: 20 }, FECHA_25_VENCE_5, 0),
     ).toThrow();
+  });
+});
+
+describe('totalFatura', () => {
+  it('soma só as transações ativas quando não há crédito', () => {
+    const transacoes: TransacaoDaFatura[] = [
+      { ativa: true, valorCentavos: 10000 },
+      { ativa: true, valorCentavos: 5000 },
+    ];
+    expect(totalFatura(transacoes, [])).toBe(15000);
+  });
+
+  it('abate o estorno parcial de uma transação da fatura', () => {
+    // Compra de R$300, devolveram um item de R$50: a fatura fecha em R$250.
+    const transacoes: TransacaoDaFatura[] = [{ ativa: true, valorCentavos: 30000 }];
+    const creditos: CreditoDaFatura[] = [{ origem: 'ESTORNO', valorCentavos: 5000 }];
+    expect(totalFatura(transacoes, creditos)).toBe(25000);
+  });
+
+  it('NÃO abate crédito de reembolso — esse dinheiro não passou pelo cartão', () => {
+    const transacoes: TransacaoDaFatura[] = [{ ativa: true, valorCentavos: 30000 }];
+    const creditos: CreditoDaFatura[] = [{ origem: 'REEMBOLSO', valorCentavos: 30000 }];
+    expect(totalFatura(transacoes, creditos)).toBe(30000);
+  });
+
+  it('mistura estorno (abate) e reembolso (não abate) na mesma fatura', () => {
+    const transacoes: TransacaoDaFatura[] = [
+      { ativa: true, valorCentavos: 30000 },
+      { ativa: true, valorCentavos: 8000 },
+    ];
+    const creditos: CreditoDaFatura[] = [
+      { origem: 'ESTORNO', valorCentavos: 5000 },
+      { origem: 'REEMBOLSO', valorCentavos: 8000 },
+    ];
+    // 30000 + 8000 - 5000 (só o estorno abate) = 33000
+    expect(totalFatura(transacoes, creditos)).toBe(33000);
+  });
+
+  it('transação cancelada (ativa: false) não entra na soma', () => {
+    const transacoes: TransacaoDaFatura[] = [
+      { ativa: true, valorCentavos: 10000 },
+      { ativa: false, valorCentavos: 99999 },
+    ];
+    expect(totalFatura(transacoes, [])).toBe(10000);
   });
 });

@@ -13,6 +13,7 @@ import {
   partesDaCompetencia,
   somarMeses,
 } from './data';
+import type { Centavos } from './dinheiro';
 
 export interface RegraCartao {
   /** Dia do mês em que a fatura fecha. 1..31 */
@@ -88,4 +89,35 @@ export function faturasDasParcelas(
   return Array.from({ length: quantidade }, (_, k) =>
     faturaDaCompetencia(somarMeses(primeira.competencia, k), regra),
   );
+}
+
+export interface TransacaoDaFatura {
+  ativa: boolean;
+  valorCentavos: Centavos;
+}
+
+export interface CreditoDaFatura {
+  origem: 'REEMBOLSO' | 'ESTORNO';
+  valorCentavos: Centavos;
+}
+
+/**
+ * Total de uma fatura (spec, seção 4): soma das transações ativas vinculadas
+ * a ela, menos os créditos de origem ESTORNO. Créditos de REEMBOLSO NÃO
+ * abatem a fatura — aquele dinheiro veio por fora do cartão, nunca passou
+ * por ela. É essa definição que faz o total bater com o aplicativo do banco.
+ */
+export function totalFatura(
+  transacoes: TransacaoDaFatura[],
+  creditos: CreditoDaFatura[],
+): Centavos {
+  const somaTransacoes = transacoes
+    .filter((t) => t.ativa)
+    .reduce((total, t) => total + t.valorCentavos, 0);
+
+  const somaEstornos = creditos
+    .filter((c) => c.origem === 'ESTORNO')
+    .reduce((total, c) => total + c.valorCentavos, 0);
+
+  return somaTransacoes - somaEstornos;
 }
