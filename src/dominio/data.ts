@@ -34,7 +34,7 @@ export function criarCompetencia(ano: number, mes: number): Competencia {
   if (!Number.isInteger(mes) || mes < 1 || mes > 12) {
     throw new Error(`Mês fora de 1..12: ${mes}`);
   }
-  return `${ano}-${String(mes).padStart(2, '0')}`;
+  return `${String(ano).padStart(4, '0')}-${String(mes).padStart(2, '0')}`;
 }
 
 export function competenciaDe(d: DataCivil): Competencia {

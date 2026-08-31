@@ -52,6 +52,12 @@ describe('criarCompetencia e partesDaCompetencia', () => {
     expect(() => partesDaCompetencia('2026-3')).toThrow();
     expect(() => partesDaCompetencia('agosto')).toThrow();
   });
+
+  it('preenche o ano com zero à esquerda até 4 dígitos', () => {
+    expect(criarCompetencia(999, 3)).toBe('0999-03');
+    expect(() => partesDaCompetencia('0999-03')).not.toThrow();
+    expect(partesDaCompetencia('0999-03')).toEqual({ ano: 999, mes: 3 });
+  });
 });
 
 describe('somarMeses', () => {
