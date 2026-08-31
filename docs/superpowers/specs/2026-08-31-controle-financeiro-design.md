@@ -24,7 +24,8 @@ Usuário único. O login existe para proteger o acesso, não para separar dados 
 | Competência | Carimbada na gravação, nunca recalculada sozinha |
 | Parcelamento | Uma parcela por mês, cada uma na competência da sua fatura |
 | Cartões | Fatura como entidade, com fechar e pagar |
-| Reembolso | Consome orçamento; ao receber, estorna na competência original |
+| Reembolso | Consome orçamento; crédito parcial ou total, na competência original |
+| Estorno | Fluxo dedicado; parcelas não cobradas são canceladas, cobradas viram crédito |
 | Receita futura | Informada manualmente por mês |
 | Orçamento | Versionado por vigência, sem acúmulo entre meses |
 
@@ -54,12 +55,14 @@ Transaction          id, tipo (DESPESA | RECEITA)
                      cardId?, invoiceId?
                      budgetCategoryId?, subcategoryId?
                      competencia (YYYY-MM)              ← carimbada na gravação
+                     status (ATIVA | CANCELADA)
                      reembolsoAlvoCentavos              ← 0 = não é reembolsável
                      grupoParcelamentoId?, parcelaNum, parcelaTotal
                      recorrenciaId?
                      UNIQUE (recorrenciaId, competencia) onde recorrenciaId não é nulo
 
-Reimbursement        id, transactionId → Transaction, valorCentavos, recebidoEm
+Credito              id, transactionId → Transaction, valorCentavos, recebidoEm,
+                     competenciaCredito (YYYY-MM), origem (REEMBOLSO | ESTORNO)
                      ← um registro por recebimento; vários por lançamento
 
 ExpectedIncome       id, competencia (YYYY-MM), descricao, valorCentavos
@@ -117,6 +120,11 @@ demanda, com status `ABERTA`.
 seriam afetadas e só reprocessa após confirmação explícita. Faturas `FECHADA` ou `PAGA`
 nunca são tocadas.
 
+**Total de uma fatura:** soma das transações `ATIVA` vinculadas a ela, menos os `Credito`
+de origem `ESTORNO` cuja `competenciaCredito` é a dela. Créditos de reembolso não entram —
+esse dinheiro veio por fora do cartão. É essa definição que faz o total bater com o
+aplicativo do banco.
+
 **Pagamento de fatura não é despesa.** As compras já consumiram o orçamento na sua
 competência; marcar a fatura como paga apenas muda o status e não gera lançamento, para
 não contar o mesmo dinheiro duas vezes.
@@ -141,13 +149,27 @@ a próxima mudança.
 
 **Não há acúmulo:** sobrar R$150 em outubro não aumenta o orçamento de novembro.
 
-## 6. Reembolso
+## 6. Reembolso e estorno
+
+Dois eventos devolvem dinheiro, e o app os trata com a mesma tabela `Credito` porque o
+efeito no orçamento é idêntico. A diferença está em dois pontos, e é o campo `origem` que
+os separa:
+
+| | Reembolso | Estorno |
+|---|---|---|
+| O que houve | a despesa aconteceu, mas era de outra pessoa | a compra foi desfeita |
+| Quem devolve | um terceiro, por fora do cartão | a operadora, na própria fatura |
+| Reduz a fatura? | **não** | **sim** |
+| Parcelas futuras | continuam sendo cobradas | são canceladas |
+
+### 6.1 Reembolso
 
 O reembolso é **um valor acumulado, não um interruptor**. Cada lançamento carrega um alvo a
-reembolsar, e cada recebimento vira um registro em `Reimbursement`. Por lançamento:
+reembolsar, e cada recebimento vira um registro em `Credito` com `origem = REEMBOLSO`. Por
+lançamento:
 
 ```
-recebido(t)  = Σ valorCentavos dos Reimbursement de t
+recebido(t)  = Σ valorCentavos dos Credito de t
 pendente(t)  = reembolsoAlvoCentavos(t) − recebido(t)
 ```
 
@@ -165,15 +187,16 @@ A fatura é o único agregado que usa valor bruto — o dinheiro saiu para o ban
 independentemente de ressarcimento posterior. Orçamento, aba de Áreas e sobra usam o valor
 líquido, `valor − recebido`.
 
-O estorno vale na **competência original** da despesa, qualquer que seja a data do
-recebimento. Consequência aceita: uma despesa de setembro reembolsada em outubro altera o
-número de setembro depois de o mês ter fechado. A aba de Reembolsos torna isso visível,
-registrando cada recebimento com sua data e o mês corrigido.
+O crédito de reembolso vale na **competência original** da despesa
+(`competenciaCredito = competencia` da transação), qualquer que seja a data do recebimento.
+Consequência aceita: uma despesa de setembro reembolsada em outubro altera o número de
+setembro depois de o mês ter fechado. A aba de Reembolsos torna isso visível, registrando
+cada recebimento com sua data e o mês corrigido.
 
-Implementação: nenhum lançamento de crédito é criado. O estorno é a subtração do valor
-recebido dentro das agregações líquidas.
+Implementação: nenhuma transação de receita é criada. O crédito é subtraído dentro das
+agregações líquidas.
 
-### Fluxo de recebimento
+#### Fluxo de recebimento
 
 Ao marcar um recebimento, o app abre uma caixa de confirmação de valor, **preenchida com o
 valor pendente**. Confirmar o valor cheio quita o reembolso. Informar um valor menor
@@ -189,16 +212,61 @@ como padrão. Isso cobre a conta dividida: dos R$300 no seu cartão, apenas R$20
 terceiros, e os R$100 restantes consomem seu orçamento desde o início, sem nunca aparecer
 como pendência.
 
+### 6.2 Estorno de compra
+
+Compra cancelada, devolvida ou contestada. A ação "estornar" existe no lançamento à vista e
+no grupo de parcelamento inteiro.
+
+**O que decide o tratamento de cada parcela não é a operadora, é o status da fatura em que
+ela está** — ou seja, se aquele dinheiro já foi cobrado de você:
+
+| Fatura da parcela | Tratamento |
+|---|---|
+| `ABERTA` ou ainda não criada | parcela vira `CANCELADA`: sai do orçamento, da sobra e da fatura |
+| `FECHADA` ou `PAGA` | parcela permanece; nasce um `Credito` com `origem = ESTORNO` |
+
+Parcela cancelada é preservada no banco, nunca apagada, para que o histórico continue
+explicando por que aquela compra sumiu da projeção.
+
+**A escolha que depende da operadora** é apenas onde os créditos das parcelas já cobradas
+aparecem. O formulário de estorno oferece as duas formas:
+
+- **Crédito único** — todos os créditos recebem a mesma `competenciaCredito`, a da fatura em
+  que a operadora lançou o estorno. É o comportamento de quem devolve tudo de uma vez.
+- **Por fatura** — cada crédito herda a `competenciaCredito` da sua própria parcela. É o
+  comportamento de quem estorna parcela a parcela.
+
+O estorno também pode ser **parcial em valor** (devolução de um item de uma compra maior).
+Nesse caso nenhuma parcela é cancelada — o valor estornado vira crédito, e as parcelas
+seguem sendo cobradas normalmente.
+
+**Efeito na fatura:** créditos com `origem = ESTORNO` **reduzem** o total da fatura da sua
+`competenciaCredito`, porque a operadora de fato abateu aquele valor. Créditos com
+`origem = REEMBOLSO` não tocam a fatura, já que o dinheiro veio por fora do cartão. É essa
+distinção que faz o total da fatura no app bater com o do aplicativo do banco.
+
+**Consequência aceita:** um estorno com crédito único pode deixar uma categoria com gasto
+líquido negativo naquele mês — você recebeu de volta mais do que gastou ali. O app exibe o
+valor negativo como está, sem truncar em zero, porque truncar esconderia dinheiro real da
+sobra do mês.
+
 ## 7. Fórmula da sobra
 
 Definições por competência *M*, todas em centavos:
 
-- `despesaLiquida(M)` = `Σ (valorCentavos − recebido(t))` sobre as despesas *t* de *M*
+- `bruto(M)` = soma das despesas **`ATIVA`** de competência *M* (canceladas nunca entram)
+- `creditos(M)` = soma dos `Credito` com `competenciaCredito = M`, de qualquer origem
+- `despesaLiquida(M)` = `bruto(M) − creditos(M)`
 - `receitaRealizada(M)` = soma das transações `RECEITA` de *M*
 - `receitaPrevista(M)` = soma de `ExpectedIncome` de *M*
-- `gastoCat(c, M)` = despesa líquida de *M* na categoria *c*
+- `gastoCat(c, M)` = o mesmo cálculo restrito à categoria *c*, seguindo a categoria da
+  despesa de origem do crédito
 - `orcamento(c, M)` = alocação vigente de *c* em *M*, ou 0 se *M* é anterior à primeira
   alocação daquela categoria
+
+Créditos são somados pela **sua própria** `competenciaCredito`, não pela competência da
+despesa. No reembolso as duas coincidem por definição; no estorno com crédito único, não —
+e é justamente por isso que a soma é feita assim. `gastoCat(c, M)` pode ser negativo.
 
 **Receita considerada:**
 
@@ -314,6 +382,22 @@ Numa compra parcelada, mostra "10x de R$200, de setembro/2026 a junho/2027". Ess
 o que torna a regra de competência compreensível no momento do uso, em vez de um
 comportamento inexplicável descoberto depois.
 
+### 8.5 Formulário de estorno
+
+Aberto pela ação "estornar" num lançamento ou num grupo de parcelamento. Campos: valor
+(total por padrão, editável para estorno parcial), data do estorno e, quando há parcelas em
+faturas já fechadas, a escolha entre **crédito único** e **por fatura**.
+
+Antes de confirmar, o formulário mostra o efeito exato, para que nada aconteça por
+surpresa:
+
+> Estornar R$ 2.000 · TV 10x
+> **3 parcelas já cobradas** (set, out, nov) viram crédito de R$ 600 em **novembro/2026**
+> **7 parcelas futuras** (dez/2026 a jun/2027) são canceladas — liberam R$ 1.400 da projeção
+
+A escolha entre crédito único e por fatura troca a linha do meio em tempo real, então dá
+para conferir contra a fatura do banco antes de confirmar.
+
 ## 9. Paleta
 
 Paleta categórica validada para deficiência de visão de cores nos dois temas, com separação
@@ -370,11 +454,16 @@ Escritos **antes** da implementação nos módulos puros, onde errar é caro e s
   realizada e projetada; receita ausente.
 - **reembolso** — pendente calculado após cada recebimento; rejeição de valor zero,
   negativo ou acima do pendente; alvo menor que o valor do lançamento.
+- **estorno** — partição das parcelas entre canceladas e creditadas conforme o status da
+  fatura; crédito único versus por fatura; estorno parcial em valor, que não cancela
+  parcela nenhuma; categoria com gasto líquido negativo; total da fatura reduzido só por
+  crédito de origem `ESTORNO`.
 
-Ponta a ponta com Playwright, três fluxos: entrar no app; lançar compra parcelada no
+Ponta a ponta com Playwright, quatro fluxos: entrar no app; lançar compra parcelada no
 crédito e conferir a competência de cada parcela; registrar um reembolso parcial, conferir
-que a pendência permanece pelo restante, e quitá-la num segundo recebimento verificando o
-estorno no mês correto.
+que a pendência permanece pelo restante e quitá-la num segundo recebimento; estornar um
+parcelamento com faturas já fechadas e confirmar que as parcelas futuras somem da projeção
+enquanto as cobradas viram crédito.
 
 ## 13. Robustez
 
@@ -382,7 +471,9 @@ estorno no mês correto.
 - Dinheiro em centavos inteiros; nenhum ponto flutuante no domínio.
 - Fuso fixo em `America/Sao_Paulo` em todo cálculo de mês.
 - Geração de parcelas dentro de uma transação de banco: dez parcelas entram todas ou
-  nenhuma.
+  nenhuma. O estorno de um parcelamento segue a mesma regra — cancelamentos e créditos são
+  gravados juntos ou nada é gravado.
+- Transações `CANCELADA` são preservadas, nunca removidas. Nenhuma agregação as inclui.
 - Despesas fixas materializadas sob demanda ao abrir o mês, com unicidade por
   `(recorrenciaId, competencia)` garantindo idempotência.
 
