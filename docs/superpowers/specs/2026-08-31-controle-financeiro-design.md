@@ -54,10 +54,13 @@ Transaction          id, tipo (DESPESA | RECEITA)
                      cardId?, invoiceId?
                      budgetCategoryId?, subcategoryId?
                      competencia (YYYY-MM)              ← carimbada na gravação
-                     reembolso (NAO | PENDENTE | RECEBIDO), reembolsoRecebidoEm?
+                     reembolsoAlvoCentavos              ← 0 = não é reembolsável
                      grupoParcelamentoId?, parcelaNum, parcelaTotal
                      recorrenciaId?
                      UNIQUE (recorrenciaId, competencia) onde recorrenciaId não é nulo
+
+Reimbursement        id, transactionId → Transaction, valorCentavos, recebidoEm
+                     ← um registro por recebimento; vários por lançamento
 
 ExpectedIncome       id, competencia (YYYY-MM), descricao, valorCentavos
 RecurringExpense     id, descricao, valorCentavos, diaDoMes, budgetCategoryId,
@@ -69,6 +72,7 @@ RecurringExpense     id, descricao, valorCentavos, diaDoMes, budgetCategoryId,
 - Despesa exige `budgetCategoryId` e `subcategoryId`; receita não aceita nenhum dos dois.
 - `subcategoryId` deve pertencer ao `budgetCategoryId` informado.
 - `metodo = CREDITO` exige `cardId` e `invoiceId`; os demais métodos exigem ambos nulos.
+- `reembolsoAlvoCentavos` fica entre 0 e `valorCentavos`, e só é maior que zero em despesas.
 - Dinheiro é sempre inteiro em centavos. Ponto flutuante não aparece em nenhum ponto do
   domínio.
 - Na divisão de parcelas, os centavos de resto vão para a primeira parcela: R$100,05 em
@@ -139,31 +143,57 @@ a próxima mudança.
 
 ## 6. Reembolso
 
-| Estado | Orçamento | Sobra do mês | Fatura do cartão |
+O reembolso é **um valor acumulado, não um interruptor**. Cada lançamento carrega um alvo a
+reembolsar, e cada recebimento vira um registro em `Reimbursement`. Por lançamento:
+
+```
+recebido(t)  = Σ valorCentavos dos Reimbursement de t
+pendente(t)  = reembolsoAlvoCentavos(t) − recebido(t)
+```
+
+O estado é **derivado**, nunca armazenado — não há campo de status que possa divergir dos
+valores:
+
+| Situação | Estado | Orçamento consome | Fatura do cartão |
 |---|---|---|---|
-| `PENDENTE` | consome | conta como despesa | entra |
-| `RECEBIDO` | estorna | sai da conta | **continua entrando** |
+| `alvo = 0` | não reembolsável | valor integral | integral |
+| `recebido = 0` | pendente | valor integral | integral |
+| `0 < recebido < alvo` | parcialmente recebido | `valor − recebido` | integral |
+| `recebido = alvo` | quitado | `valor − recebido` | integral |
 
 A fatura é o único agregado que usa valor bruto — o dinheiro saiu para o banco de fato,
-independentemente de ressarcimento posterior. Orçamento, aba de Áreas e sobra usam valor
-líquido, ou seja, ignoram lançamentos com `reembolso = RECEBIDO`.
+independentemente de ressarcimento posterior. Orçamento, aba de Áreas e sobra usam o valor
+líquido, `valor − recebido`.
 
-O estorno vale na **competência original** da despesa. Consequência aceita: uma despesa de
-setembro reembolsada em outubro altera o número de setembro depois de o mês ter fechado. A
-aba de Reembolsos torna isso visível, registrando a data de recebimento e o mês corrigido.
+O estorno vale na **competência original** da despesa, qualquer que seja a data do
+recebimento. Consequência aceita: uma despesa de setembro reembolsada em outubro altera o
+número de setembro depois de o mês ter fechado. A aba de Reembolsos torna isso visível,
+registrando cada recebimento com sua data e o mês corrigido.
 
-Implementação: nenhum lançamento de crédito é criado. O estorno é a própria exclusão do
-lançamento das agregações líquidas.
+Implementação: nenhum lançamento de crédito é criado. O estorno é a subtração do valor
+recebido dentro das agregações líquidas.
 
-**O reembolso é integral.** Marcar como recebido estorna o valor cheio do lançamento; não
-existe reembolso parcial. Para ressarcimento de parte de uma compra, o lançamento deve ser
-dividido em dois — a parte própria e a parte a reembolsar.
+### Fluxo de recebimento
+
+Ao marcar um recebimento, o app abre uma caixa de confirmação de valor, **preenchida com o
+valor pendente**. Confirmar o valor cheio quita o reembolso. Informar um valor menor
+registra o recebimento parcial e o reembolso **permanece em aberto pelo restante** — a aba
+de Reembolsos passa a mostrar o pendente atualizado, e um novo recebimento pode ser
+registrado depois, quantas vezes for preciso.
+
+Regras de validação: cada recebimento deve ser maior que zero e não pode exceder o
+pendente. A soma dos recebimentos nunca ultrapassa o alvo.
+
+O `reembolsoAlvoCentavos` também é editável na criação do lançamento, com o valor cheio
+como padrão. Isso cobre a conta dividida: dos R$300 no seu cartão, apenas R$200 são de
+terceiros, e os R$100 restantes consomem seu orçamento desde o início, sem nunca aparecer
+como pendência.
 
 ## 7. Fórmula da sobra
 
 Definições por competência *M*, todas em centavos:
 
-- `despesaLiquida(M)` = soma das despesas de *M* com `reembolso ≠ RECEBIDO`
+- `despesaLiquida(M)` = `Σ (valorCentavos − recebido(t))` sobre as despesas *t* de *M*
 - `receitaRealizada(M)` = soma das transações `RECEITA` de *M*
 - `receitaPrevista(M)` = soma de `ExpectedIncome` de *M*
 - `gastoCat(c, M)` = despesa líquida de *M* na categoria *c*
@@ -244,7 +274,7 @@ avisos". Ordenação por severidade e, dentro da mesma severidade, por valor dec
 | Vermelho | orçamento estourado |
 | Amarelo | orçamento com 90% ou mais consumido, ainda não estourado |
 | Amarelo | fatura fecha em 2 dias ou menos |
-| Azul | há reembolso pendente há mais de 30 dias |
+| Azul | há valor pendente de reembolso lançado há mais de 30 dias |
 | Cinza | receita prevista do próximo mês não informada |
 
 ### 8.2 Áreas
@@ -335,12 +365,16 @@ Escritos **antes** da implementação nos módulos puros, onde errar é caro e s
   de centavos.
 - **orçamento vigente** — herança entre meses, incluindo o cenário ago/set/dez da seção 5;
   mês anterior à primeira alocação; remoção de uma definição.
-- **agregação** — despesa líquida com reembolso pendente e recebido; `máx(orçamento,
-  comprometido)`; sobra realizada e projetada; receita ausente.
+- **agregação** — despesa líquida nos quatro estados de reembolso da seção 6, incluindo
+  recebimentos parciais sucessivos que somam o alvo; `máx(orçamento, comprometido)`; sobra
+  realizada e projetada; receita ausente.
+- **reembolso** — pendente calculado após cada recebimento; rejeição de valor zero,
+  negativo ou acima do pendente; alvo menor que o valor do lançamento.
 
 Ponta a ponta com Playwright, três fluxos: entrar no app; lançar compra parcelada no
-crédito e conferir a competência de cada parcela; marcar reembolso como recebido e conferir
-o estorno no mês correto.
+crédito e conferir a competência de cada parcela; registrar um reembolso parcial, conferir
+que a pendência permanece pelo restante, e quitá-la num segundo recebimento verificando o
+estorno no mês correto.
 
 ## 13. Robustez
 
