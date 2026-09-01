@@ -46,7 +46,16 @@ export default async function Painel({
     avisosDoMes(competencia),
   ]);
 
-  const sobra = resumo.sobraProjetada;
+  // Mês passado: só o que de fato aconteceu. Mês corrente e futuro: a
+  // projeção do fechamento (spec, seção 7 — "Meses passados exibem apenas o
+  // realizado; meses futuros, apenas a projeção").
+  const sobra = resumo.ehMesPassado ? resumo.sobraRealizada : resumo.sobraProjetada;
+
+  // O bloco "realizado até aqui" só faz sentido no mês corrente: num mês
+  // passado ele é redundante com o herói (que já mostra o realizado); num mês
+  // futuro ele é só ruído (fica sempre ~R$0).
+  const hoje = competenciaDe(dataCivilEm(new Date()));
+  const ehMesCorrente = resumo.competencia === hoje;
 
   return (
     <>
@@ -60,10 +69,12 @@ export default async function Painel({
             ›
           </Link>
         </div>
-        <div className={estilos.realizado}>
-          <b>{formatarBRL(resumo.sobraRealizada)}</b>
-          <span>realizado até aqui</span>
-        </div>
+        {ehMesCorrente ? (
+          <div className={estilos.realizado}>
+            <b>{formatarBRL(resumo.sobraRealizada)}</b>
+            <span>realizado até aqui</span>
+          </div>
+        ) : null}
       </div>
 
       <div className={estilos.heroi}>
@@ -77,28 +88,35 @@ export default async function Painel({
           <em>de {formatarBRL(resumo.receitaConsiderada)} de receita</em>
         </div>
 
-        <div className={estilos.trilha}>
-          <div
-            style={{
-              width: largura(resumo.faixas.gastoCentavos, resumo.receitaConsiderada),
-              background: VERDE,
-            }}
-          />
-          <div
-            style={{
-              width: largura(
-                resumo.faixas.comprometidoCentavos,
-                resumo.receitaConsiderada,
-              ),
-              background: AMBAR,
-            }}
-          />
-        </div>
-        <div className={estilos.legenda}>
-          <span>{formatarBRL(resumo.faixas.gastoCentavos)} já gastos</span>
-          <span>{formatarBRL(resumo.faixas.comprometidoCentavos)} comprometidos</span>
-          <span>{formatarBRL(resumo.faixas.livreCentavos)} livres</span>
-        </div>
+        {/* Num mês passado não há mais "comprometido": o mês fechou, só resta
+            o que de fato sobrou — já mostrado acima. A trilha e a legenda de
+            três números só fazem sentido enquanto o mês ainda está correndo. */}
+        {!resumo.ehMesPassado ? (
+          <>
+            <div className={estilos.trilha}>
+              <div
+                style={{
+                  width: largura(resumo.faixas.gastoCentavos, resumo.receitaConsiderada),
+                  background: VERDE,
+                }}
+              />
+              <div
+                style={{
+                  width: largura(
+                    resumo.faixas.comprometidoCentavos,
+                    resumo.receitaConsiderada,
+                  ),
+                  background: AMBAR,
+                }}
+              />
+            </div>
+            <div className={estilos.legenda}>
+              <span>{formatarBRL(resumo.faixas.gastoCentavos)} já gastos</span>
+              <span>{formatarBRL(resumo.faixas.comprometidoCentavos)} comprometidos</span>
+              <span>{formatarBRL(resumo.faixas.livreCentavos)} livres</span>
+            </div>
+          </>
+        ) : null}
       </div>
 
       {avisos.visiveis.length > 0 ? (
