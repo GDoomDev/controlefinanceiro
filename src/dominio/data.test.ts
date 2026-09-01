@@ -3,6 +3,7 @@ import {
   competenciaDe,
   criarCompetencia,
   dataCivilEm,
+  diasEntre,
   diaSeguro,
   formatarDataCivil,
   lerDataCivil,
@@ -122,5 +123,34 @@ describe('diaSeguro', () => {
 
   it('encurta o dia 31 para 30 em meses de 30 dias', () => {
     expect(diaSeguro(31, 2026, 4)).toBe(30);
+  });
+});
+
+describe('diasEntre', () => {
+  it('conta os dias entre duas datas do mesmo mês', () => {
+    expect(diasEntre({ ano: 2026, mes: 9, dia: 1 }, { ano: 2026, mes: 9, dia: 15 })).toBe(14);
+  });
+
+  it('é zero para a mesma data', () => {
+    expect(diasEntre({ ano: 2026, mes: 9, dia: 7 }, { ano: 2026, mes: 9, dia: 7 })).toBe(0);
+  });
+
+  it('é negativo quando a segunda data é anterior', () => {
+    expect(diasEntre({ ano: 2026, mes: 9, dia: 15 }, { ano: 2026, mes: 9, dia: 1 })).toBe(-14);
+  });
+
+  it('atravessa a virada de mês', () => {
+    expect(diasEntre({ ano: 2026, mes: 8, dia: 30 }, { ano: 2026, mes: 9, dia: 2 })).toBe(3);
+  });
+
+  it('atravessa a virada de ano', () => {
+    expect(diasEntre({ ano: 2026, mes: 12, dia: 28 }, { ano: 2027, mes: 1, dia: 4 })).toBe(7);
+  });
+
+  it('conta o dia extra de um ano bissexto', () => {
+    // 2028 é bissexto: fevereiro tem 29 dias.
+    expect(diasEntre({ ano: 2028, mes: 2, dia: 28 }, { ano: 2028, mes: 3, dia: 1 })).toBe(2);
+    // 2027 não é: fevereiro tem 28.
+    expect(diasEntre({ ano: 2027, mes: 2, dia: 28 }, { ano: 2027, mes: 3, dia: 1 })).toBe(1);
   });
 });

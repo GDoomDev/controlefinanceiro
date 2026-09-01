@@ -6,8 +6,8 @@ import {
 } from '@/dominio/avisos';
 import {
   type Competencia,
-  type DataCivil,
   dataCivilEm,
+  diasEntre,
   lerDataCivil,
   somarMeses,
 } from '@/dominio/data';
@@ -25,11 +25,6 @@ function validarCompetencia(c: Competencia): void {
   if (!/^\d{4}-\d{2}$/.test(c)) {
     throw new Error(`Competência inválida, esperado "YYYY-MM": ${c}`);
   }
-}
-
-/** Converte uma data civil num número de dias absoluto, para subtrair datas. */
-function emDiasAbsolutos(d: DataCivil): number {
-  return Math.floor(Date.UTC(d.ano, d.mes - 1, d.dia) / 86400000);
 }
 
 /**
@@ -76,7 +71,7 @@ export async function avisosDoMes(
 
       return {
         cartaoNome: cartao.nome,
-        diasParaFechar: emDiasAbsolutos(aberta.fechamento) - emDiasAbsolutos(hoje),
+        diasParaFechar: diasEntre(hoje, aberta.fechamento),
         totalCentavos: persistida ? await totalDaFatura(persistida.id, cliente) : 0,
       };
     }),
@@ -98,8 +93,7 @@ export async function avisosDoMes(
     pendenteTotal > 0 && dataMaisAntiga !== null
       ? {
           totalCentavos: pendenteTotal,
-          diasDoMaisAntigo:
-            emDiasAbsolutos(hoje) - emDiasAbsolutos(lerDataCivil(dataMaisAntiga)),
+          diasDoMaisAntigo: diasEntre(lerDataCivil(dataMaisAntiga), hoje),
         }
       : null;
 

@@ -90,3 +90,16 @@ export function lerDataCivil(texto: string): DataCivil {
 export function diaSeguro(dia: number, ano: number, mes: number): number {
   return Math.min(dia, ultimoDiaDoMes(ano, mes));
 }
+
+/**
+ * Diferença em dias civis. Positivo quando `ate` vem depois de `de`.
+ *
+ * Datas civis não têm hora, então a subtração é exata — nenhum horário de
+ * verão ou fuso entra na conta. O `Date.UTC` aqui é só um jeito de numerar
+ * dias; nenhum instante real é representado.
+ */
+export function diasEntre(de: DataCivil, ate: DataCivil): number {
+  const emDias = (d: DataCivil): number =>
+    Math.floor(Date.UTC(d.ano, d.mes - 1, d.dia) / 86400000);
+  return emDias(ate) - emDias(de);
+}
