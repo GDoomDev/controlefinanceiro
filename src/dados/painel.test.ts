@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { criarCategoria, criarSubcategoria } from './categorias';
+import { arquivarCategoria, criarCategoria, criarSubcategoria } from './categorias';
 import { criarLancamento } from './lancamentos';
 import { definirAlocacao } from './orcamentos';
 import { resumoDoMes } from './painel';
@@ -17,11 +17,11 @@ async function cenario(tx: ClientePrisma) {
   const bar = await criarSubcategoria({ budgetCategoryId: lazer.id, nome: 'Bar' }, tx);
 
   await definirAlocacao(
-    { budgetCategoryId: alimentacao.id, vigenteDe: '2026-09', valorCentavos: 120000 },
+    { budgetCategoryId: alimentacao.id, vigenteDe: '2099-09', valorCentavos: 120000 },
     tx,
   );
   await definirAlocacao(
-    { budgetCategoryId: lazer.id, vigenteDe: '2026-09', valorCentavos: 50000 },
+    { budgetCategoryId: lazer.id, vigenteDe: '2099-09', valorCentavos: 50000 },
     tx,
   );
 
@@ -38,7 +38,7 @@ async function gastar(
     {
       descricao: 'Gasto',
       valorCentavos,
-      data: '2026-09-10',
+      data: '2099-09-10',
       metodo: 'PIX',
       cardId: null,
       budgetCategoryId: categoriaId,
@@ -56,7 +56,7 @@ describe('resumoDoMes', () => {
       const { alimentacao, delivery } = await cenario(tx);
       await gastar(tx, alimentacao.id, delivery.id, 94000);
 
-      const resumo = await resumoDoMes('2026-09', tx);
+      const resumo = await resumoDoMes('2099-09', tx);
       const card = resumo.cards.find((c) => c.categoriaId === alimentacao.id)!;
       expect(card.orcadoCentavos).toBe(120000);
       expect(card.gastoCentavos).toBe(94000);
@@ -71,7 +71,7 @@ describe('resumoDoMes', () => {
       await gastar(tx, alimentacao.id, delivery.id, 94000);
       await gastar(tx, lazer.id, bar.id, 62000);
 
-      const resumo = await resumoDoMes('2026-09', tx);
+      const resumo = await resumoDoMes('2099-09', tx);
       const nomes = resumo.cards
         .filter((c) => [alimentacao.id, lazer.id].includes(c.categoriaId))
         .map((c) => c.nome);
@@ -85,7 +85,7 @@ describe('resumoDoMes', () => {
       await gastar(tx, alimentacao.id, delivery.id, 94000);
       await gastar(tx, lazer.id, bar.id, 62000);
 
-      const resumo = await resumoDoMes('2026-09', tx);
+      const resumo = await resumoDoMes('2099-09', tx);
       expect(resumo.despesaLiquida).toBe(156000);
     });
   });
@@ -93,15 +93,15 @@ describe('resumoDoMes', () => {
   it('usa a receita realizada e a prevista, e considera a maior no mês futuro', async () => {
     await comRollback(async (tx) => {
       await criarReceita(
-        { descricao: 'Salário', valorCentavos: 609000, data: '2026-09-05', metodo: 'PIX' },
+        { descricao: 'Salário', valorCentavos: 609000, data: '2099-09-05', metodo: 'PIX' },
         tx,
       );
       await criarReceitaPrevista(
-        { competencia: '2026-09', descricao: 'Salário', valorCentavos: 600000 },
+        { competencia: '2099-09', descricao: 'Salário', valorCentavos: 600000 },
         tx,
       );
 
-      const resumo = await resumoDoMes('2026-09', tx);
+      const resumo = await resumoDoMes('2099-09', tx);
       expect(resumo.receitaRealizada).toBe(609000);
       expect(resumo.receitaPrevista).toBe(600000);
       // Mês não passado usa máx(prevista, realizada).
@@ -117,11 +117,11 @@ describe('resumoDoMes', () => {
       await gastar(tx, alimentacao.id, delivery.id, 94000);
       await gastar(tx, lazer.id, bar.id, 62000);
       await criarReceita(
-        { descricao: 'Salário', valorCentavos: 609000, data: '2026-09-05', metodo: 'PIX' },
+        { descricao: 'Salário', valorCentavos: 609000, data: '2099-09-05', metodo: 'PIX' },
         tx,
       );
 
-      const r = await resumoDoMes('2026-09', tx);
+      const r = await resumoDoMes('2099-09', tx);
       expect(
         r.faixas.gastoCentavos + r.faixas.comprometidoCentavos + r.faixas.livreCentavos,
       ).toBe(r.receitaConsiderada);
@@ -133,11 +133,11 @@ describe('resumoDoMes', () => {
       const { alimentacao, delivery } = await cenario(tx);
       await gastar(tx, alimentacao.id, delivery.id, 94000);
       await criarReceita(
-        { descricao: 'Salário', valorCentavos: 609000, data: '2026-09-05', metodo: 'PIX' },
+        { descricao: 'Salário', valorCentavos: 609000, data: '2099-09-05', metodo: 'PIX' },
         tx,
       );
 
-      const r = await resumoDoMes('2026-09', tx);
+      const r = await resumoDoMes('2099-09', tx);
       expect(r.faixas.livreCentavos).toBe(r.sobraProjetada);
     });
   });
@@ -147,21 +147,54 @@ describe('resumoDoMes', () => {
       const { alimentacao, delivery } = await cenario(tx);
       await gastar(tx, alimentacao.id, delivery.id, 94000);
       await criarReceita(
-        { descricao: 'Salário', valorCentavos: 609000, data: '2026-09-05', metodo: 'PIX' },
+        { descricao: 'Salário', valorCentavos: 609000, data: '2099-09-05', metodo: 'PIX' },
         tx,
       );
 
-      const r = await resumoDoMes('2026-09', tx);
+      const r = await resumoDoMes('2099-09', tx);
       expect(r.sobraRealizada).toBe(609000 - 94000);
     });
   });
 
   it('um mês vazio devolve zeros sem quebrar', async () => {
     await comRollback(async (tx) => {
-      const r = await resumoDoMes('2027-06', tx);
+      const r = await resumoDoMes('2099-06', tx);
       expect(r.despesaLiquida).toBe(0);
       expect(r.receitaRealizada).toBe(0);
       expect(r.faixas.gastoCentavos).toBe(0);
+    });
+  });
+
+  it('categoria arquivada com gasto no mês continua na barra do herói, sem divergir da sobra projetada', async () => {
+    await comRollback(async (tx) => {
+      const doacoes = await criarCategoria({ nome: 'Doações', corSlot: 4 }, tx);
+      const sub = await criarSubcategoria(
+        { budgetCategoryId: doacoes.id, nome: 'Doações-sub' },
+        tx,
+      );
+      await criarLancamento(
+        {
+          descricao: 'Doação pontual',
+          valorCentavos: 15000,
+          data: '2099-11-10',
+          metodo: 'PIX',
+          cardId: null,
+          budgetCategoryId: doacoes.id,
+          subcategoryId: sub.id,
+          parcelas: 1,
+          reembolsoAlvoCentavos: 0,
+        },
+        tx,
+      );
+
+      // Arquivada depois do gasto: some de `orcamentosDoMes`, mas o gasto
+      // continua contando na fórmula da sobra (spec, seção 7) — a barra do
+      // herói precisa refletir isso também, não só o número da sobra.
+      await arquivarCategoria(doacoes.id, tx);
+
+      const r = await resumoDoMes('2099-11', tx);
+      expect(r.faixas.gastoCentavos).toBeGreaterThanOrEqual(15000);
+      expect(r.faixas.livreCentavos).toBe(r.sobraProjetada);
     });
   });
 

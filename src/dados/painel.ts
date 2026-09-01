@@ -107,13 +107,38 @@ export async function resumoDoMes(
 
   const gastos = gastoPorCategoria(despesas, creditosAgregaveis, mes);
 
-  const doPainel: OrcamentoDoPainel[] = orcamentos.map((o) => ({
-    categoriaId: o.categoriaId,
-    nome: o.nome,
-    corSlot: o.corSlot,
-    orcadoCentavos: o.valorCentavos,
-    gastoCentavos: gastos.get(o.categoriaId) ?? 0,
-  }));
+  // A união de categorias com orçamento e categorias com gasto (spec, seção
+  // 7) inclui categorias arquivadas que ainda tiveram gasto no mês —
+  // `orcamentosDoMes` já as excluiu, então buscamos nome/cor delas à parte
+  // para a barra do herói e a fórmula da sobra nunca divergirem.
+  const idsComOrcamento = new Set(orcamentos.map((o) => o.categoriaId));
+  const idsSoComGasto = [...gastos.keys()].filter(
+    (id) => id && !idsComOrcamento.has(id),
+  );
+
+  const categoriasArquivadasComGasto = idsSoComGasto.length > 0
+    ? await cliente.budgetCategory.findMany({
+        where: { id: { in: idsSoComGasto } },
+        select: { id: true, nome: true, corSlot: true },
+      })
+    : [];
+
+  const doPainel: OrcamentoDoPainel[] = [
+    ...orcamentos.map((o) => ({
+      categoriaId: o.categoriaId,
+      nome: o.nome,
+      corSlot: o.corSlot,
+      orcadoCentavos: o.valorCentavos,
+      gastoCentavos: gastos.get(o.categoriaId) ?? 0,
+    })),
+    ...categoriasArquivadasComGasto.map((c) => ({
+      categoriaId: c.id,
+      nome: c.nome,
+      corSlot: c.corSlot,
+      orcadoCentavos: 0,
+      gastoCentavos: gastos.get(c.id) ?? 0,
+    })),
+  ];
 
   const considerada = receitaConsiderada(prevista, realizada, ehMesPassado);
   const liquida = despesaLiquida(despesas, creditosAgregaveis, mes);
