@@ -6,9 +6,7 @@ import { formatarBRL } from '@/dominio/dinheiro';
 
 import { acaoDefinirAlocacao, acaoRemoverAlocacao } from './acoes';
 import estilos from './orcamentos.module.css';
-
-/** Paleta do spec, seção 9 — validada para daltonismo nos dois temas. */
-const CORES = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300'];
+import { CORES } from '../cores';
 
 export default async function Orcamentos({
   searchParams,
