@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { criarCategoria, criarSubcategoria } from './categorias';
 import { criarCartao } from './cartoes';
 import { listarFaturas, totalDaFatura } from './faturas';
@@ -7,6 +7,7 @@ import {
   criarLancamento,
   listarLancamentos,
 } from './lancamentos';
+import { prisma } from './prisma';
 import { comRollback } from './rollback';
 import type { ClientePrisma } from './tipos';
 
@@ -152,6 +153,119 @@ describe('criarLancamento — crédito parcelado', () => {
         expect(await totalDaFatura(fatura.id, tx)).toBe(20000);
       }
     });
+  });
+});
+
+describe('criarLancamento — atomicidade sob falha', () => {
+  it('nenhuma parcela sobrevive se uma falhar no meio do loop', async () => {
+    // Diferente dos demais testes deste arquivo, este NÃO usa `comRollback`.
+    //
+    // `comRollback` passa para `criarLancamento` um `tx` que já é, ele
+    // próprio, um cliente de transação (`Prisma.TransactionClient`). Como
+    // esse tipo não tem `$transaction`, `criarLancamento` sempre cai no ramo
+    // `gravar(cliente)` — nunca no ramo `cliente.$transaction(...)`, que é
+    // exatamente o que a docstring da função promete ("as dez entram ou
+    // nenhuma entra"). Um teste que passasse um `tx` de fora não seria capaz
+    // de distinguir a versão real (transacional) de uma versão quebrada que
+    // chamasse `gravar(cliente)` sem transação nenhuma — os dois casos se
+    // comportariam de forma idêntica, porque o `tx` de fora nunca teria
+    // `$transaction` de qualquer forma. (Verificado experimentalmente: um
+    // teste assim continua "passando" mesmo com o código não-transacional,
+    // e pior — dentro do mesmo `tx` externo, as parcelas 1 e 2 continuam
+    // visíveis logo após a rejeição, porque só o rollback de fora, no fim do
+    // `comRollback`, as desfaria.)
+    //
+    // Por isso este teste chama `criarLancamento` sem passar `cliente`
+    // (usando o padrão, o `prisma` de topo), forçando o ramo
+    // `cliente.$transaction((tx) => gravar(tx))` de verdade. Para injetar
+    // uma falha na 3ª de 5 parcelas sem poder capturar o `tx` interno do
+    // Prisma antes de ele existir (ele só é criado quando `$transaction` é
+    // chamado), espionamos `prisma.$transaction` e, na nossa implementação,
+    // delegamos para a implementação original — só que envolvendo o `tx`
+    // que o Prisma nos entrega com uma versão de `transaction.create` que
+    // deixa as duas primeiras chamadas passarem de verdade (chamando a
+    // implementação real) e derruba a terceira com um erro proposital.
+    const nomeCartao = 'Cartão — teste de atomicidade';
+    const nomeCategoria = 'Categoria — teste de atomicidade';
+    const descricaoCompra = 'TV com falha proposital no meio do parcelamento';
+
+    // Limpeza defensiva: caso uma execução anterior tenha sido interrompida
+    // antes do `finally`, isso evita colidir com os nomes únicos usados
+    // aqui (a tabela real do Postgres não tem o rollback automático dos
+    // outros testes).
+    await prisma.transaction.deleteMany({ where: { descricao: descricaoCompra } });
+    await prisma.card.deleteMany({ where: { nome: nomeCartao } });
+    await prisma.budgetCategory.deleteMany({ where: { nome: nomeCategoria } });
+
+    const categoria = await criarCategoria({ nome: nomeCategoria, corSlot: 3 }, prisma);
+    const subcategoria = await criarSubcategoria(
+      { budgetCategoryId: categoria.id, nome: 'Sub' },
+      prisma,
+    );
+    const cartao = await criarCartao(
+      { nome: nomeCartao, diaFechamento: 25, diaVencimento: 5 },
+      prisma,
+    );
+
+    const transactionOriginal = prisma.$transaction.bind(prisma);
+    const espiao = vi
+      .spyOn(prisma, '$transaction')
+      .mockImplementation(((fnOuArray: unknown, opcoes?: unknown) => {
+        if (typeof fnOuArray !== 'function') {
+          return transactionOriginal(fnOuArray as never, opcoes as never);
+        }
+        return transactionOriginal(async (tx) => {
+          let chamadas = 0;
+          const criarOriginal = tx.transaction.create.bind(tx.transaction);
+          const txComFalha = {
+            ...tx,
+            transaction: {
+              ...tx.transaction,
+              create: (...args: Parameters<typeof criarOriginal>) => {
+                chamadas += 1;
+                if (chamadas === 3) {
+                  throw new Error('falha proposital no meio do parcelamento');
+                }
+                return criarOriginal(...args);
+              },
+            },
+          };
+          return (fnOuArray as (tx: ClientePrisma) => Promise<unknown>)(
+            txComFalha as unknown as ClientePrisma,
+          );
+        }, opcoes as never);
+      }) as typeof prisma.$transaction);
+
+    try {
+      await expect(
+        criarLancamento({
+          descricao: descricaoCompra,
+          valorCentavos: 500000,
+          data: '2026-08-20',
+          metodo: 'CREDITO',
+          cardId: cartao.id,
+          budgetCategoryId: categoria.id,
+          subcategoryId: subcategoria.id,
+          parcelas: 5,
+          reembolsoAlvoCentavos: 0,
+        }),
+      ).rejects.toThrow('falha proposital no meio do parcelamento');
+
+      // Nenhuma parcela sobrevive — nem a primeira e a segunda, que teriam
+      // sido gravadas de verdade (a espiã chamou a implementação real do
+      // Prisma para elas) antes da falha proposital na terceira.
+      for (const competencia of ['2026-09', '2026-10', '2026-11', '2026-12', '2027-01']) {
+        const lista = await listarLancamentos(competencia, prisma);
+        expect(lista.filter((l) => l.descricao === descricaoCompra)).toHaveLength(0);
+      }
+    } finally {
+      espiao.mockRestore();
+      await prisma.transaction.deleteMany({ where: { descricao: descricaoCompra } });
+      await prisma.invoice.deleteMany({ where: { cardId: cartao.id } });
+      await prisma.card.delete({ where: { id: cartao.id } });
+      await prisma.subcategory.delete({ where: { id: subcategoria.id } });
+      await prisma.budgetCategory.delete({ where: { id: categoria.id } });
+    }
   });
 });
 
