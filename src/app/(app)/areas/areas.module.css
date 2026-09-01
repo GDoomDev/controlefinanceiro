@@ -1,0 +1,231 @@
+.cabecalho {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.meses {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 13px;
+}
+
+.mesLink {
+  color: #6b7280;
+  text-decoration: none;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.mesLink:hover {
+  background: #f3f4f6;
+}
+
+.mesAtual {
+  font-weight: 600;
+  color: #111827;
+}
+
+.total {
+  font-size: 22px;
+  font-weight: 680;
+  letter-spacing: -0.6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.totalRotulo {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #9ca3af;
+}
+
+/* Camada 1: barra 100% empilhada. O respiro de 2px entre segmentos vem do
+   `gap`, não de margem, para que as larguras percentuais continuem exatas. */
+.barra {
+  display: flex;
+  gap: 2px;
+  height: 34px;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.segmento {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: none;
+  overflow: hidden;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+.segmento:hover {
+  filter: brightness(1.08);
+}
+
+.segmentoAtivo {
+  outline: 2px solid #111827;
+  outline-offset: -2px;
+}
+
+.legenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-bottom: 8px;
+}
+
+.legendaItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #374151;
+  text-decoration: none;
+}
+
+.legendaItem:hover {
+  color: #111827;
+}
+
+.ponto {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.legendaValor {
+  font-variant-numeric: tabular-nums;
+  color: #6b7280;
+}
+
+.creditados {
+  font-size: 12px;
+  color: #6b7280;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 8px 11px;
+  margin-bottom: 18px;
+}
+
+.filtro {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  margin-bottom: 12px;
+}
+
+.limpar {
+  color: #2a78d6;
+  text-decoration: none;
+}
+
+.limpar:hover {
+  text-decoration: underline;
+}
+
+.titulo {
+  font-size: 13px;
+  font-weight: 650;
+  margin: 22px 0 10px;
+}
+
+/* Camada 2: ranking de subcategorias. */
+.linha {
+  position: relative;
+  padding: 7px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.linhaTopo {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.linhaNome {
+  font-weight: 550;
+  color: #111827;
+}
+
+.linhaOrcamento {
+  font-size: 11px;
+  color: #9ca3af;
+  margin-left: 6px;
+}
+
+.linhaValor {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.linhaPercentual {
+  font-size: 11px;
+  color: #6b7280;
+  margin-left: 6px;
+}
+
+.linhaTrilha {
+  height: 7px;
+  border-radius: 4px;
+  background: #f3f4f6;
+  margin-top: 5px;
+  overflow: hidden;
+}
+
+.linhaPreenchimento {
+  height: 100%;
+  border-radius: 4px;
+}
+
+/* Detalhe do spec 8.2: aparece no hover ou no foco (teclado). No celular,
+   onde não existe hover, ele fica sempre visível — ver a media query. */
+.detalhe {
+  display: none;
+  font-size: 11px;
+  color: #6b7280;
+  margin-top: 5px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.linha:hover .detalhe,
+.linha:focus-within .detalhe {
+  display: flex;
+}
+
+.outras {
+  padding: 9px 0;
+  font-size: 12.5px;
+  color: #9ca3af;
+}
+
+.vazio {
+  border: 1px dashed #d1d5db;
+  border-radius: 10px;
+  padding: 22px;
+  text-align: center;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+@media (max-width: 720px) {
+  .detalhe {
+    display: flex;
+  }
+}
