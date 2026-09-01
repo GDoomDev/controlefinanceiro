@@ -1,0 +1,114 @@
+.cabecalho {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.meses {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 13px;
+  margin-bottom: 18px;
+}
+
+.mesLink {
+  color: #6b7280;
+  text-decoration: none;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.mesLink:hover {
+  background: #f3f4f6;
+}
+
+.mesAtual {
+  font-weight: 600;
+  color: #111827;
+}
+
+.lista {
+  border: 1px solid #e5e7eb;
+  border-radius: 9px;
+  overflow: hidden;
+}
+
+.linha {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  flex-wrap: wrap;
+}
+
+.linha + .linha {
+  border-top: 1px solid #f3f4f6;
+}
+
+.cor {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.nome {
+  font-size: 13.5px;
+  font-weight: 500;
+  min-width: 130px;
+}
+
+.origem {
+  font-size: 11px;
+  color: #9ca3af;
+  flex: 1;
+}
+
+.definido {
+  color: #2a78d6;
+}
+
+.entrada {
+  border: 1px solid #d1d5db;
+  border-radius: 7px;
+  padding: 6px 9px;
+  font-size: 13px;
+  font-family: inherit;
+  width: 110px;
+  text-align: right;
+}
+
+.botao {
+  background: #111827;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  padding: 7px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.remover {
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 11px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.total {
+  margin-top: 16px;
+  font-size: 14px;
+  text-align: right;
+}
+
+.vazio {
+  padding: 20px 14px;
+  font-size: 13px;
+  color: #9ca3af;
+}

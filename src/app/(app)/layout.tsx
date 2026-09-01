@@ -6,6 +6,7 @@ import estilos from './navegacao.module.css';
 
 const DESTINOS = [
   { href: '/', rotulo: 'Painel' },
+  { href: '/orcamentos', rotulo: 'Orçamentos' },
   { href: '/lancamentos', rotulo: 'Lançamentos' },
   { href: '/cartoes', rotulo: 'Cartões' },
   { href: '/ajustes', rotulo: 'Ajustes' },
