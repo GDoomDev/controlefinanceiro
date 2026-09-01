@@ -14,7 +14,7 @@ import {
 const salario = {
   descricao: 'Salário',
   valorCentavos: 609000,
-  data: '2026-09-05',
+  data: '2099-09-05',
   metodo: 'PIX' as const,
 };
 
@@ -22,11 +22,11 @@ describe('criarReceita', () => {
   it('grava na competência do mês da própria data', async () => {
     await comRollback(async (tx) => {
       const { id } = await criarReceita(salario, tx);
-      const lista = await listarReceitas('2026-09', tx);
+      const lista = await listarReceitas('2099-09', tx);
       const criada = lista.find((r) => r.id === id);
       expect(criada?.descricao).toBe('Salário');
       expect(criada?.valorCentavos).toBe(609000);
-      expect(criada?.competencia).toBe('2026-09');
+      expect(criada?.competencia).toBe('2099-09');
     });
   });
 
@@ -55,7 +55,7 @@ describe('criarReceita', () => {
     await comRollback(async (tx) => {
       await criarReceita(salario, tx);
       const despesas = await tx.transaction.findMany({
-        where: { competencia: '2026-09', tipo: 'DESPESA' },
+        where: { competencia: '2099-09', tipo: 'DESPESA' },
         select: { descricao: true },
       });
       expect(despesas.map((d) => d.descricao)).not.toContain('Salário');
@@ -89,19 +89,19 @@ describe('receitaRealizadaDoMes', () => {
     await comRollback(async (tx) => {
       await criarReceita(salario, tx);
       await criarReceita(
-        { descricao: 'Freela', valorCentavos: 150000, data: '2026-09-20', metodo: 'PIX' },
+        { descricao: 'Freela', valorCentavos: 150000, data: '2099-09-20', metodo: 'PIX' },
         tx,
       );
-      await criarReceita({ ...salario, data: '2026-10-05' }, tx);
+      await criarReceita({ ...salario, data: '2099-10-05' }, tx);
 
-      expect(await receitaRealizadaDoMes('2026-09', tx)).toBe(759000);
-      expect(await receitaRealizadaDoMes('2026-10', tx)).toBe(609000);
+      expect(await receitaRealizadaDoMes('2099-09', tx)).toBe(759000);
+      expect(await receitaRealizadaDoMes('2099-10', tx)).toBe(609000);
     });
   });
 
   it('é zero num mês sem receita', async () => {
     await comRollback(async (tx) => {
-      expect(await receitaRealizadaDoMes('2026-09', tx)).toBe(0);
+      expect(await receitaRealizadaDoMes('2099-09', tx)).toBe(0);
     });
   });
 });
@@ -111,8 +111,8 @@ describe('apagarReceita', () => {
     await comRollback(async (tx) => {
       const { id } = await criarReceita(salario, tx);
       await apagarReceita(id, tx);
-      expect(await listarReceitas('2026-09', tx)).toEqual([]);
-      expect(await receitaRealizadaDoMes('2026-09', tx)).toBe(0);
+      expect(await listarReceitas('2099-09', tx)).toEqual([]);
+      expect(await receitaRealizadaDoMes('2099-09', tx)).toBe(0);
     });
   });
 });
@@ -121,49 +121,49 @@ describe('receita prevista', () => {
   it('cria, lista e soma', async () => {
     await comRollback(async (tx) => {
       await criarReceitaPrevista(
-        { competencia: '2026-10', descricao: 'Salário', valorCentavos: 609000 },
+        { competencia: '2099-10', descricao: 'Salário', valorCentavos: 609000 },
         tx,
       );
       await criarReceitaPrevista(
-        { competencia: '2026-10', descricao: 'Aluguel recebido', valorCentavos: 120000 },
+        { competencia: '2099-10', descricao: 'Aluguel recebido', valorCentavos: 120000 },
         tx,
       );
 
-      const lista = await listarReceitasPrevistas('2026-10', tx);
+      const lista = await listarReceitasPrevistas('2099-10', tx);
       expect(lista).toHaveLength(2);
-      expect(await receitaPrevistaDoMes('2026-10', tx)).toBe(729000);
+      expect(await receitaPrevistaDoMes('2099-10', tx)).toBe(729000);
     });
   });
 
   it('é zero num mês sem previsão', async () => {
     await comRollback(async (tx) => {
-      expect(await receitaPrevistaDoMes('2026-10', tx)).toBe(0);
+      expect(await receitaPrevistaDoMes('2099-10', tx)).toBe(0);
     });
   });
 
   it('não se mistura com a receita realizada', async () => {
     await comRollback(async (tx) => {
-      await criarReceita({ ...salario, data: '2026-10-05' }, tx);
+      await criarReceita({ ...salario, data: '2099-10-05' }, tx);
       await criarReceitaPrevista(
-        { competencia: '2026-10', descricao: 'Salário', valorCentavos: 609000 },
+        { competencia: '2099-10', descricao: 'Salário', valorCentavos: 609000 },
         tx,
       );
 
-      expect(await receitaRealizadaDoMes('2026-10', tx)).toBe(609000);
-      expect(await receitaPrevistaDoMes('2026-10', tx)).toBe(609000);
-      expect(await listarReceitas('2026-10', tx)).toHaveLength(1);
-      expect(await listarReceitasPrevistas('2026-10', tx)).toHaveLength(1);
+      expect(await receitaRealizadaDoMes('2099-10', tx)).toBe(609000);
+      expect(await receitaPrevistaDoMes('2099-10', tx)).toBe(609000);
+      expect(await listarReceitas('2099-10', tx)).toHaveLength(1);
+      expect(await listarReceitasPrevistas('2099-10', tx)).toHaveLength(1);
     });
   });
 
   it('apaga uma previsão', async () => {
     await comRollback(async (tx) => {
       const { id } = await criarReceitaPrevista(
-        { competencia: '2026-10', descricao: 'Salário', valorCentavos: 609000 },
+        { competencia: '2099-10', descricao: 'Salário', valorCentavos: 609000 },
         tx,
       );
       await apagarReceitaPrevista(id, tx);
-      expect(await receitaPrevistaDoMes('2026-10', tx)).toBe(0);
+      expect(await receitaPrevistaDoMes('2099-10', tx)).toBe(0);
     });
   });
 
@@ -171,7 +171,7 @@ describe('receita prevista', () => {
     await comRollback(async (tx) => {
       await expect(
         criarReceitaPrevista(
-          { competencia: '2026-10', descricao: 'X', valorCentavos: 0 },
+          { competencia: '2099-10', descricao: 'X', valorCentavos: 0 },
           tx,
         ),
       ).rejects.toThrow();
