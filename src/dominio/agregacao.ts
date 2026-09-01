@@ -14,6 +14,8 @@ import type { Centavos } from './dinheiro';
 export interface DespesaAgregavel {
   competencia: Competencia;
   categoriaId: string;
+  /** Opcional: só a tela de Áreas agrega por subcategoria. */
+  subcategoriaId?: string;
   valorCentavos: Centavos;
   cancelada: boolean;
 }
@@ -21,6 +23,8 @@ export interface DespesaAgregavel {
 export interface CreditoAgregavel {
   competenciaCredito: Competencia;
   categoriaId: string;
+  /** Opcional: só a tela de Áreas agrega por subcategoria. */
+  subcategoriaId?: string;
   valorCentavos: Centavos;
 }
 
@@ -101,4 +105,59 @@ export function sobraProjetada(
   }
 
   return receita - comprometido;
+}
+
+export interface EstatisticaDeSubcategoria {
+  /** Líquido: despesas ativas menos créditos. Pode ser negativo. */
+  gastoCentavos: Centavos;
+  /** Quantos lançamentos ativos — créditos não contam. */
+  quantidade: number;
+  /** Maior despesa individual em valor BRUTO, antes de qualquer crédito. */
+  maiorLancamentoCentavos: Centavos;
+}
+
+function estatisticaVazia(): EstatisticaDeSubcategoria {
+  return { gastoCentavos: 0, quantidade: 0, maiorLancamentoCentavos: 0 };
+}
+
+/**
+ * O mesmo cálculo de `gastoPorCategoria`, um nível abaixo, mais as duas
+ * estatísticas que o detalhe da tela de Áreas mostra (spec, seção 8.2).
+ *
+ * Despesa sem subcategoria é ignorada: receita não tem uma, e o spec (seção 3)
+ * obriga toda despesa a ter.
+ */
+export function estatisticasPorSubcategoria(
+  despesas: DespesaAgregavel[],
+  creditos: CreditoAgregavel[],
+  mes: Competencia,
+): Map<string, EstatisticaDeSubcategoria> {
+  const stats = new Map<string, EstatisticaDeSubcategoria>();
+
+  function entrada(chave: string): EstatisticaDeSubcategoria {
+    const existente = stats.get(chave);
+    if (existente) return existente;
+    const nova = estatisticaVazia();
+    stats.set(chave, nova);
+    return nova;
+  }
+
+  for (const d of despesas) {
+    if (d.cancelada || d.competencia !== mes) continue;
+    if (!d.subcategoriaId) continue;
+
+    const e = entrada(d.subcategoriaId);
+    e.gastoCentavos += d.valorCentavos;
+    e.quantidade += 1;
+    e.maiorLancamentoCentavos = Math.max(e.maiorLancamentoCentavos, d.valorCentavos);
+  }
+
+  for (const c of creditos) {
+    if (c.competenciaCredito !== mes) continue;
+    if (!c.subcategoriaId) continue;
+
+    entrada(c.subcategoriaId).gastoCentavos -= c.valorCentavos;
+  }
+
+  return stats;
 }

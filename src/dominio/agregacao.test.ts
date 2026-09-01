@@ -3,6 +3,7 @@ import {
   type CreditoAgregavel,
   type DespesaAgregavel,
   despesaLiquida,
+  estatisticasPorSubcategoria,
   gastoPorCategoria,
   receitaConsiderada,
   sobraProjetada,
@@ -180,5 +181,149 @@ describe('sobraProjetada', () => {
     const gastos = new Map([['eletronicos', -50000]]);
     // máx(20000, −50000) = 20000
     expect(sobraProjetada(100000, orcamentos, gastos)).toBe(80000);
+  });
+});
+
+describe('estatisticasPorSubcategoria', () => {
+  const mes = '2026-09';
+
+  function comSub(
+    subcategoriaId: string,
+    valorCentavos: number,
+    extras: Partial<DespesaAgregavel> = {},
+  ): DespesaAgregavel {
+    return {
+      competencia: mes,
+      categoriaId: 'cat-1',
+      subcategoriaId,
+      valorCentavos,
+      cancelada: false,
+      ...extras,
+    };
+  }
+
+  it('soma as despesas ativas de cada subcategoria', () => {
+    const stats = estatisticasPorSubcategoria(
+      [comSub('sub-a', 3000), comSub('sub-a', 2000), comSub('sub-b', 500)],
+      [],
+      mes,
+    );
+
+    expect(stats.get('sub-a')?.gastoCentavos).toBe(5000);
+    expect(stats.get('sub-b')?.gastoCentavos).toBe(500);
+  });
+
+  it('ignora despesas canceladas e de outra competência', () => {
+    const stats = estatisticasPorSubcategoria(
+      [
+        comSub('sub-a', 3000),
+        comSub('sub-a', 9900, { cancelada: true }),
+        comSub('sub-a', 7700, { competencia: '2026-10' }),
+      ],
+      [],
+      mes,
+    );
+
+    expect(stats.get('sub-a')?.gastoCentavos).toBe(3000);
+    expect(stats.get('sub-a')?.quantidade).toBe(1);
+  });
+
+  it('ignora despesa sem subcategoria', () => {
+    const stats = estatisticasPorSubcategoria(
+      [comSub('sub-a', 3000), comSub('', 1000), { ...comSub('x', 1000), subcategoriaId: undefined }],
+      [],
+      mes,
+    );
+
+    expect([...stats.keys()]).toEqual(['sub-a']);
+  });
+
+  it('crédito reduz o gasto da subcategoria da despesa de origem', () => {
+    const stats = estatisticasPorSubcategoria(
+      [comSub('sub-a', 10000)],
+      [
+        {
+          competenciaCredito: mes,
+          categoriaId: 'cat-1',
+          subcategoriaId: 'sub-a',
+          valorCentavos: 4000,
+        },
+      ],
+      mes,
+    );
+
+    expect(stats.get('sub-a')?.gastoCentavos).toBe(6000);
+  });
+
+  it('crédito de outra competência não entra', () => {
+    const stats = estatisticasPorSubcategoria(
+      [comSub('sub-a', 10000)],
+      [
+        {
+          competenciaCredito: '2026-10',
+          categoriaId: 'cat-1',
+          subcategoriaId: 'sub-a',
+          valorCentavos: 4000,
+        },
+      ],
+      mes,
+    );
+
+    expect(stats.get('sub-a')?.gastoCentavos).toBe(10000);
+  });
+
+  it('conta os lançamentos sem contar os créditos', () => {
+    const stats = estatisticasPorSubcategoria(
+      [comSub('sub-a', 1000), comSub('sub-a', 2000)],
+      [
+        {
+          competenciaCredito: mes,
+          categoriaId: 'cat-1',
+          subcategoriaId: 'sub-a',
+          valorCentavos: 500,
+        },
+      ],
+      mes,
+    );
+
+    expect(stats.get('sub-a')?.quantidade).toBe(2);
+  });
+
+  it('o maior lançamento é o bruto, não o líquido depois do crédito', () => {
+    const stats = estatisticasPorSubcategoria(
+      [comSub('sub-a', 1000), comSub('sub-a', 8000)],
+      [
+        {
+          competenciaCredito: mes,
+          categoriaId: 'cat-1',
+          subcategoriaId: 'sub-a',
+          valorCentavos: 7900,
+        },
+      ],
+      mes,
+    );
+
+    expect(stats.get('sub-a')?.maiorLancamentoCentavos).toBe(8000);
+  });
+
+  it('subcategoria só com crédito aparece com gasto negativo', () => {
+    const stats = estatisticasPorSubcategoria(
+      [],
+      [
+        {
+          competenciaCredito: mes,
+          categoriaId: 'cat-1',
+          subcategoriaId: 'sub-a',
+          valorCentavos: 2500,
+        },
+      ],
+      mes,
+    );
+
+    expect(stats.get('sub-a')).toEqual({
+      gastoCentavos: -2500,
+      quantidade: 0,
+      maiorLancamentoCentavos: 0,
+    });
   });
 });
