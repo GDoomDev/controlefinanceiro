@@ -7,6 +7,7 @@ import {
   planejarEstorno,
   planejarEstornoParcial,
   recebido,
+  resumirPlanoEstorno,
   validarRecebimento,
 } from './reembolso';
 
@@ -191,5 +192,102 @@ describe('ordenarPorAntiguidade', () => {
     ordenarPorAntiguidade(entrada);
 
     expect(entrada.map((r) => r.diasParado)).toEqual([1, 90]);
+  });
+});
+
+describe('resumirPlanoEstorno', () => {
+  // Uma TV em 10x de R$200, comprada em setembro. As três primeiras parcelas
+  // já foram cobradas (fatura FECHADA/PAGA); as sete restantes ainda não.
+  const parcelas: ParcelaEstornavel[] = [
+    { id: 'p1', competencia: '2026-09', valorCentavos: 20000, statusFatura: 'PAGA' },
+    { id: 'p2', competencia: '2026-10', valorCentavos: 20000, statusFatura: 'PAGA' },
+    { id: 'p3', competencia: '2026-11', valorCentavos: 20000, statusFatura: 'FECHADA' },
+    { id: 'p4', competencia: '2026-12', valorCentavos: 20000, statusFatura: 'ABERTA' },
+    { id: 'p5', competencia: '2027-01', valorCentavos: 20000, statusFatura: 'ABERTA' },
+    { id: 'p6', competencia: '2027-02', valorCentavos: 20000, statusFatura: 'ABERTA' },
+    { id: 'p7', competencia: '2027-03', valorCentavos: 20000, statusFatura: 'ABERTA' },
+    { id: 'p8', competencia: '2027-04', valorCentavos: 20000, statusFatura: 'ABERTA' },
+    { id: 'p9', competencia: '2027-05', valorCentavos: 20000, statusFatura: 'ABERTA' },
+    { id: 'p10', competencia: '2027-06', valorCentavos: 20000, statusFatura: 'ABERTA' },
+  ];
+
+  it('separa as cobradas das canceladas, com contagem e valor', () => {
+    const plano = planejarEstorno(parcelas, 'UNICO', '2026-11');
+    const r = resumirPlanoEstorno(plano, parcelas);
+
+    expect(r.creditadas.quantidade).toBe(3);
+    expect(r.creditadas.valorCentavos).toBe(60000);
+    expect(r.canceladas.quantidade).toBe(7);
+    expect(r.canceladas.valorCentavos).toBe(140000);
+    expect(r.totalCentavos).toBe(200000);
+  });
+
+  it('lista as competências das parcelas de cada grupo, em ordem', () => {
+    const plano = planejarEstorno(parcelas, 'UNICO', '2026-11');
+    const r = resumirPlanoEstorno(plano, parcelas);
+
+    expect(r.creditadas.competencias).toEqual(['2026-09', '2026-10', '2026-11']);
+    expect(r.canceladas.competencias[0]).toBe('2026-12');
+    expect(r.canceladas.competencias[r.canceladas.competencias.length - 1]).toBe('2027-06');
+  });
+
+  it('no modo UNICO, todos os créditos caem numa competência só', () => {
+    const plano = planejarEstorno(parcelas, 'UNICO', '2026-11');
+    const r = resumirPlanoEstorno(plano, parcelas);
+
+    expect(r.competenciasDeCredito).toEqual(['2026-11']);
+  });
+
+  it('no modo POR_FATURA, cada crédito cai na competência da sua parcela', () => {
+    const plano = planejarEstorno(parcelas, 'POR_FATURA', '2026-11');
+    const r = resumirPlanoEstorno(plano, parcelas);
+
+    expect(r.competenciasDeCredito).toEqual(['2026-09', '2026-10', '2026-11']);
+  });
+
+  it('não repete competência de crédito quando duas parcelas caem no mesmo mês', () => {
+    const duasNoMesmoMes: ParcelaEstornavel[] = [
+      { id: 'a', competencia: '2026-09', valorCentavos: 1000, statusFatura: 'PAGA' },
+      { id: 'b', competencia: '2026-09', valorCentavos: 2000, statusFatura: 'PAGA' },
+    ];
+    const plano = planejarEstorno(duasNoMesmoMes, 'POR_FATURA', '2026-09');
+    const r = resumirPlanoEstorno(plano, duasNoMesmoMes);
+
+    expect(r.competenciasDeCredito).toEqual(['2026-09']);
+    expect(r.creditadas.quantidade).toBe(2);
+  });
+
+  it('uma compra à vista ainda não cobrada só tem cancelamento', () => {
+    const avista: ParcelaEstornavel[] = [
+      { id: 'unica', competencia: '2026-09', valorCentavos: 5000, statusFatura: 'ABERTA' },
+    ];
+    const r = resumirPlanoEstorno(planejarEstorno(avista, 'UNICO', '2026-09'), avista);
+
+    expect(r.canceladas.quantidade).toBe(1);
+    expect(r.creditadas.quantidade).toBe(0);
+    expect(r.creditadas.valorCentavos).toBe(0);
+    expect(r.competenciasDeCredito).toEqual([]);
+    expect(r.totalCentavos).toBe(5000);
+  });
+
+  it('uma compra à vista já paga só vira crédito', () => {
+    const avista: ParcelaEstornavel[] = [
+      { id: 'unica', competencia: '2026-09', valorCentavos: 5000, statusFatura: 'PAGA' },
+    ];
+    const r = resumirPlanoEstorno(planejarEstorno(avista, 'UNICO', '2026-10'), avista);
+
+    expect(r.canceladas.quantidade).toBe(0);
+    expect(r.creditadas.quantidade).toBe(1);
+    expect(r.competenciasDeCredito).toEqual(['2026-10']);
+  });
+
+  it('ignora id do plano que não existe na lista de parcelas', () => {
+    const r = resumirPlanoEstorno(
+      { canceladas: ['fantasma'], creditos: [] },
+      [{ id: 'real', competencia: '2026-09', valorCentavos: 1000, statusFatura: 'ABERTA' }],
+    );
+
+    expect(r.canceladas.quantidade).toBe(0);
+    expect(r.totalCentavos).toBe(0);
   });
 });

@@ -137,3 +137,62 @@ export function ordenarPorAntiguidade<T extends ReembolsoOrdenavel>(itens: T[]):
     (a, b) => b.diasParado - a.diasParado || b.pendenteCentavos - a.pendenteCentavos,
   );
 }
+
+export interface GrupoDeParcelas {
+  quantidade: number;
+  valorCentavos: Centavos;
+  /** Competências das próprias parcelas, ordenadas. */
+  competencias: Competencia[];
+}
+
+export interface ResumoDoEstorno {
+  /** Parcelas que ainda não foram cobradas e por isso somem. */
+  canceladas: GrupoDeParcelas;
+  /** Parcelas já cobradas, que permanecem e viram crédito. */
+  creditadas: GrupoDeParcelas;
+  /**
+   * Onde os créditos aparecem: uma competência só no modo UNICO, uma por
+   * parcela no POR_FATURA. Ordenada e sem repetição.
+   */
+  competenciasDeCredito: Competencia[];
+  /** Quanto o estorno move ao todo. */
+  totalCentavos: Centavos;
+}
+
+function agrupar(parcelas: ParcelaEstornavel[]): GrupoDeParcelas {
+  return {
+    quantidade: parcelas.length,
+    valorCentavos: parcelas.reduce((total, p) => total + p.valorCentavos, 0),
+    competencias: parcelas.map((p) => p.competencia).sort(),
+  };
+}
+
+/**
+ * Traduz o plano do estorno nos números que a prévia mostra (spec, seção 8.5).
+ * Contar, somar e achar a faixa de meses é decisão de dado — a tela só formata
+ * o que sai daqui.
+ */
+export function resumirPlanoEstorno(
+  plano: PlanoEstorno,
+  parcelas: ParcelaEstornavel[],
+): ResumoDoEstorno {
+  const porId = new Map(parcelas.map((p) => [p.id, p]));
+
+  // Um id que não está na lista é ignorado: nunca inventa valor.
+  const achar = (ids: string[]): ParcelaEstornavel[] =>
+    ids.map((id) => porId.get(id)).filter((p): p is ParcelaEstornavel => p !== undefined);
+
+  const canceladas = agrupar(achar(plano.canceladas));
+  const creditadas = agrupar(achar(plano.creditos.map((c) => c.transactionId)));
+
+  const competenciasDeCredito = [
+    ...new Set(plano.creditos.map((c) => c.competenciaCredito)),
+  ].sort();
+
+  return {
+    canceladas,
+    creditadas,
+    competenciasDeCredito,
+    totalCentavos: canceladas.valorCentavos + creditadas.valorCentavos,
+  };
+}
