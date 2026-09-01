@@ -54,7 +54,7 @@ export async function avisosDoMes(
       select: {
         data: true,
         reembolsoAlvoCentavos: true,
-        creditos: { select: { valorCentavos: true } },
+        creditos: { where: { origem: 'REEMBOLSO' }, select: { valorCentavos: true } },
       },
     }),
   ]);

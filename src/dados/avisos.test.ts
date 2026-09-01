@@ -37,6 +37,35 @@ async function categoriaComGasto(
   return cat;
 }
 
+/**
+ * Cria uma transação reembolsável (fora de qualquer orçamento, já que estes
+ * testes só se importam com o cálculo do pendente de reembolso) e devolve o
+ * seu id, para anexar créditos a ela.
+ */
+async function transacaoReembolsavel(
+  tx: ClientePrisma,
+  alvoCentavos: number,
+  data: string,
+): Promise<string> {
+  const cat = await criarCategoria({ nome: 'Viagem', corSlot: 1 }, tx);
+  const sub = await criarSubcategoria({ budgetCategoryId: cat.id, nome: 'Viagem-sub' }, tx);
+  const { ids } = await criarLancamento(
+    {
+      descricao: 'Hotel compartilhado',
+      valorCentavos: alvoCentavos,
+      data,
+      metodo: 'PIX',
+      cardId: null,
+      budgetCategoryId: cat.id,
+      subcategoryId: sub.id,
+      parcelas: 1,
+      reembolsoAlvoCentavos: alvoCentavos,
+    },
+    tx,
+  );
+  return ids[0];
+}
+
 describe('avisosDoMes', () => {
   it('avisa sobre orçamento estourado', async () => {
     await comRollback(async (tx) => {
@@ -107,6 +136,53 @@ describe('avisosDoMes', () => {
   it('rejeita competência inválida', async () => {
     await comRollback(async (tx) => {
       await expect(avisosDoMes('09/2026', tx)).rejects.toThrow();
+    });
+  });
+
+  it('crédito de ESTORNO não abate reembolso pendente', async () => {
+    await comRollback(async (tx) => {
+      // Data bem antiga para garantir que o "há N dias" passe do limiar de 30
+      // dias e o aviso de reembolso apareça.
+      const transactionId = await transacaoReembolsavel(tx, 30000, '2026-06-01');
+
+      // Um estorno é a operadora desfazendo a compra — não é alguém pagando
+      // de volta o reembolso. Se ele abatesse o alvo, mascararia um
+      // reembolso que ainda não foi recebido de verdade.
+      await tx.credito.create({
+        data: {
+          transactionId,
+          valorCentavos: 30000,
+          recebidoEm: '2026-06-10',
+          competenciaCredito: '2026-06',
+          origem: 'ESTORNO',
+        },
+      });
+
+      const { visiveis } = await avisosDoMes('2026-09', tx);
+      const aviso = visiveis.find((a) => a.texto.includes('reembolsos pendentes'));
+      expect(aviso).toBeDefined();
+      expect(aviso?.texto).toContain('R$ 300,00');
+    });
+  });
+
+  it('crédito de REEMBOLSO abate o pendente corretamente', async () => {
+    await comRollback(async (tx) => {
+      const transactionId = await transacaoReembolsavel(tx, 30000, '2026-06-01');
+
+      await tx.credito.create({
+        data: {
+          transactionId,
+          valorCentavos: 10000,
+          recebidoEm: '2026-06-10',
+          competenciaCredito: '2026-06',
+          origem: 'REEMBOLSO',
+        },
+      });
+
+      const { visiveis } = await avisosDoMes('2026-09', tx);
+      const aviso = visiveis.find((a) => a.texto.includes('reembolsos pendentes'));
+      expect(aviso).toBeDefined();
+      expect(aviso?.texto).toContain('R$ 200,00');
     });
   });
 });
