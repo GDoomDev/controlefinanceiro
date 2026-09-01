@@ -80,6 +80,8 @@ export default async function Fluxo({
                     className={`${estilos.barra} ${classeTextura}`}
                     style={{ height: `${altura}%`, backgroundColor: cor }}
                   />
+                ) : p.sobraCentavos === 0 ? (
+                  <div className={estilos.marcaZero} style={{ backgroundColor: cor }} />
                 ) : null}
               </div>
 
@@ -108,6 +110,10 @@ export default async function Fluxo({
         <span className={estilos.legendaItem}>
           <span className={estilos.amostra} style={{ backgroundColor: VERMELHO }} />
           sobra negativa
+        </span>
+        <span className={estilos.legendaItem}>
+          <span className={estilos.amostra} style={{ backgroundColor: NEUTRO }} />
+          sobra zero
         </span>
         <span className={estilos.legendaItem}>
           <span
@@ -140,7 +146,13 @@ export default async function Fluxo({
               <td className={estilos.numero}>{formatarBRL(p.receitaCentavos)}</td>
               <td className={estilos.numero}>{formatarBRL(p.despesaCentavos)}</td>
               <td
-                className={`${estilos.numero} ${p.sobraCentavos >= 0 ? estilos.positivo : estilos.negativo}`}
+                className={`${estilos.numero} ${
+                  p.sobraCentavos > 0
+                    ? estilos.positivo
+                    : p.sobraCentavos < 0
+                      ? estilos.negativo
+                      : estilos.neutro
+                }`}
               >
                 {formatarBRL(p.sobraCentavos)}
               </td>

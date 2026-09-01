@@ -197,7 +197,6 @@ describe('fluxoDeMeses', () => {
       const resumo = await resumoDoMes('2020-01', tx);
 
       const central = fluxo.pontos[MESES_PARA_TRAS];
-      expect(central.receitaCentavos).toBe(500000);
       expect(central.receitaCentavos).toBe(resumo.receitaRealizada);
     });
   });

@@ -85,6 +85,15 @@
   border-radius: 0 0 3px 3px;
 }
 
+/* Marcador de sobra exatamente zero: mais espesso que a linha `.zero` (que
+   está sempre presente, independente do valor), para que um mês zerado seja
+   visivelmente diferente de um mês sem barra por outro motivo. */
+.marcaZero {
+  width: 100%;
+  height: 5px;
+  border-radius: 3px 3px 0 0;
+}
+
 /* Textura do mês futuro: distingue projeção de realizado sem usar cor.
    As listras vão por cima da cor de fundo da própria barra.
 
@@ -185,4 +194,8 @@
 
 .negativo {
   color: #dc2626;
+}
+
+.neutro {
+  color: #6b7280;
 }
