@@ -199,4 +199,45 @@ describe('totalDaFatura', () => {
       expect(await totalDaFatura(fatura.id, tx)).toBe(80000);
     });
   });
+
+  it('estorno consolidado abate a fatura da competenciaCredito, não a da compra original', async () => {
+    await comRollback(async (tx) => {
+      const cartao = await cartaoDeTeste(tx);
+      const faturaSetembro = await garantirFatura(cartao.id, '2026-09', tx);
+      const faturaNovembro = await garantirFatura(cartao.id, '2026-11', tx);
+
+      const transacao = await tx.transaction.create({
+        data: {
+          tipo: 'DESPESA',
+          descricao: 'Compra parcelada com estorno consolidado depois',
+          valorCentavos: 100000,
+          data: '2026-08-20',
+          metodo: 'CREDITO',
+          cardId: cartao.id,
+          invoiceId: faturaSetembro.id,
+          competencia: '2026-09',
+          status: 'ATIVA',
+        },
+        select: { id: true },
+      });
+
+      // A operadora só consolidou e lançou o estorno dois meses depois, na
+      // fatura de novembro — daí competenciaCredito: '2026-11'.
+      await tx.credito.create({
+        data: {
+          transactionId: transacao.id,
+          valorCentavos: 20000,
+          recebidoEm: '2026-11-10',
+          competenciaCredito: '2026-11',
+          origem: 'ESTORNO',
+        },
+      });
+
+      // A fatura de setembro não é afetada: o crédito não é dela.
+      expect(await totalDaFatura(faturaSetembro.id, tx)).toBe(100000);
+
+      // A fatura de novembro é abatida, mesmo sem transação própria vinculada.
+      expect(await totalDaFatura(faturaNovembro.id, tx)).toBe(-20000);
+    });
+  });
 });

@@ -124,16 +124,40 @@ export async function pagarFatura(
 
 /**
  * Total da fatura (spec, seção 4): transações ativas menos os créditos de
- * origem ESTORNO. Reembolso não abate — aquele dinheiro veio por fora do
- * cartão. A conta é do domínio; aqui só buscamos as linhas.
+ * origem ESTORNO cuja competenciaCredito é a desta fatura. Reembolso não
+ * abate — aquele dinheiro veio por fora do cartão. A conta é do domínio;
+ * aqui só buscamos as linhas.
+ *
+ * Importante: o crédito NÃO é buscado a partir das transações vinculadas à
+ * fatura. Um estorno consolidado (modo 'UNICO' em `planejarEstorno`) carimba
+ * `competenciaCredito` com o mês em que a operadora de fato lançou o
+ * estorno — que pode ser diferente do mês da compra original. É a fatura
+ * daquela competência que deve ser abatida, mesmo que nenhuma transação
+ * própria esteja vinculada a ela.
  */
 export async function totalDaFatura(
   id: string,
   cliente: ClientePrisma = prisma,
 ): Promise<number> {
+  const fatura = await cliente.invoice.findUnique({
+    where: { id },
+    select: { competencia: true, cardId: true },
+  });
+  if (!fatura) {
+    throw new Error(`Fatura não encontrada: ${id}`);
+  }
+
   const transacoes = await cliente.transaction.findMany({
     where: { invoiceId: id },
-    select: { status: true, valorCentavos: true, creditos: true },
+    select: { status: true, valorCentavos: true },
+  });
+
+  const creditos = await cliente.credito.findMany({
+    where: {
+      competenciaCredito: fatura.competencia,
+      transaction: { cardId: fatura.cardId },
+    },
+    select: { origem: true, valorCentavos: true },
   });
 
   return totalFatura(
@@ -141,11 +165,6 @@ export async function totalDaFatura(
       ativa: t.status === 'ATIVA',
       valorCentavos: t.valorCentavos,
     })),
-    // Os créditos já vêm restritos às transações desta fatura pelo `where`
-    // acima, então basta achatá-los. Quem decide que ESTORNO abate e
-    // REEMBOLSO não é o domínio, dentro de `totalFatura`.
-    transacoes.flatMap((t) =>
-      t.creditos.map((c) => ({ origem: c.origem, valorCentavos: c.valorCentavos })),
-    ),
+    creditos.map((c) => ({ origem: c.origem, valorCentavos: c.valorCentavos })),
   );
 }
