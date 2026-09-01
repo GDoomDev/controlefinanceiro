@@ -1,6 +1,8 @@
 import Link from 'next/link';
 
+import { avisosDoMes } from '@/dados/avisos';
 import { resumoDoMes } from '@/dados/painel';
+import type { Severidade } from '@/dominio/avisos';
 import { competenciaDe, dataCivilEm, somarMeses } from '@/dominio/data';
 import { formatarBRL } from '@/dominio/dinheiro';
 import { estaProximoDoLimite } from '@/dominio/painel';
@@ -11,6 +13,20 @@ const VERDE = '#16a34a';
 const AMBAR = '#d97706';
 const VERMELHO = '#dc2626';
 const CINZA = '#9ca3af';
+
+const CLASSE_DA_SEVERIDADE: Record<Severidade, string> = {
+  VERMELHO: estilos.avisoVermelho,
+  AMARELO: estilos.avisoAmarelo,
+  AZUL: estilos.avisoAzul,
+  CINZA: estilos.avisoCinza,
+};
+
+const ICONE_DA_SEVERIDADE: Record<Severidade, string> = {
+  VERMELHO: '⚠',
+  AMARELO: '◐',
+  AZUL: '↩',
+  CINZA: '✎',
+};
 
 /** Largura de uma faixa da barra, em porcentagem. Nunca negativa. */
 function largura(parte: number, total: number): string {
@@ -25,7 +41,10 @@ export default async function Painel({
 }) {
   const { mes } = await searchParams;
   const competencia = mes ?? competenciaDe(dataCivilEm(new Date()));
-  const resumo = await resumoDoMes(competencia);
+  const [resumo, avisos] = await Promise.all([
+    resumoDoMes(competencia),
+    avisosDoMes(competencia),
+  ]);
 
   const sobra = resumo.sobraProjetada;
 
@@ -81,6 +100,28 @@ export default async function Painel({
           <span>{formatarBRL(resumo.faixas.livreCentavos)} livres</span>
         </div>
       </div>
+
+      {avisos.visiveis.length > 0 ? (
+        <div className={estilos.avisos}>
+          {avisos.visiveis.map((a, i) => (
+            <Link
+              key={`${a.severidade}-${i}`}
+              href={a.href}
+              className={`${estilos.aviso} ${CLASSE_DA_SEVERIDADE[a.severidade]}`}
+            >
+              <span>{ICONE_DA_SEVERIDADE[a.severidade]}</span>
+              <span className={estilos.avisoTexto}>{a.texto}</span>
+              <span className={estilos.avisoIr}>ver ›</span>
+            </Link>
+          ))}
+          {avisos.ocultos > 0 ? (
+            <div className={estilos.avisoMais}>
+              + {avisos.ocultos} aviso{avisos.ocultos > 1 ? 's' : ''} de menor
+              prioridade
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       {resumo.cards.length === 0 ? (
         <div className={estilos.vazio}>
