@@ -1,9 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import { criarCategoria, criarSubcategoria } from './categorias';
 import { criarCartao } from './cartoes';
-import { listarFaturas, totalDaFatura } from './faturas';
+import { fecharFatura, listarFaturas, totalDaFatura } from './faturas';
 import {
   apagarGrupo,
+  apagarLancamento,
   criarLancamento,
   listarLancamentos,
 } from './lancamentos';
@@ -152,6 +153,84 @@ describe('criarLancamento — crédito parcelado', () => {
       for (const fatura of faturas) {
         expect(await totalDaFatura(fatura.id, tx)).toBe(20000);
       }
+    });
+  });
+
+  it('distribui reembolsoAlvoCentavos entre as parcelas do mesmo jeito que o valor', async () => {
+    await comRollback(async (tx) => {
+      const { categoria, subcategoria, cartao } = await cenario(tx);
+
+      const descricao = 'Notebook reembolsável (alvo = compra inteira)';
+      const { ids } = await criarLancamento(
+        {
+          descricao,
+          valorCentavos: 200000,
+          data: '2026-08-20',
+          metodo: 'CREDITO',
+          cardId: cartao.id,
+          budgetCategoryId: categoria.id,
+          subcategoryId: subcategoria.id,
+          parcelas: 10,
+          reembolsoAlvoCentavos: 200000,
+        },
+        tx,
+      );
+
+      expect(ids).toHaveLength(10);
+      const linhas = await tx.transaction.findMany({
+        where: { id: { in: ids } },
+        select: { valorCentavos: true, reembolsoAlvoCentavos: true },
+      });
+      expect(linhas).toHaveLength(10);
+
+      // Nenhuma parcela pode ter um alvo maior que o próprio valor da linha —
+      // era exatamente esse o bug: o alvo inteiro (R$2.000) ficava só na
+      // parcela 1, cujo valorCentavos é só R$200 (a compra dividida por 10).
+      for (const linha of linhas) {
+        expect(linha.reembolsoAlvoCentavos).toBeLessThanOrEqual(linha.valorCentavos);
+      }
+
+      // A soma bate exatamente com o alvo enviado — nenhum centavo perdido ou
+      // sobrando, a mesma garantia que dividirParcelas já dá para o valor.
+      const somaAlvos = linhas.reduce((acc, l) => acc + l.reembolsoAlvoCentavos, 0);
+      expect(somaAlvos).toBe(200000);
+    });
+  });
+
+  it('distribui um alvo parcial (menor que o total, com resto de centavos) sem ultrapassar o valor de nenhuma parcela', async () => {
+    await comRollback(async (tx) => {
+      const { categoria, subcategoria, cartao } = await cenario(tx);
+
+      const descricao = 'Presente reembolsado só em parte';
+      // 123457 não divide igualmente por 10 — força o resto a cair na
+      // primeira parcela, igual ao que dividirParcelas já faz para o valor.
+      const { ids } = await criarLancamento(
+        {
+          descricao,
+          valorCentavos: 200000,
+          data: '2026-08-20',
+          metodo: 'CREDITO',
+          cardId: cartao.id,
+          budgetCategoryId: categoria.id,
+          subcategoryId: subcategoria.id,
+          parcelas: 10,
+          reembolsoAlvoCentavos: 123457,
+        },
+        tx,
+      );
+
+      const linhas = await tx.transaction.findMany({
+        where: { id: { in: ids } },
+        select: { valorCentavos: true, reembolsoAlvoCentavos: true },
+      });
+      expect(linhas).toHaveLength(10);
+
+      for (const linha of linhas) {
+        expect(linha.reembolsoAlvoCentavos).toBeLessThanOrEqual(linha.valorCentavos);
+      }
+
+      const somaAlvos = linhas.reduce((acc, l) => acc + l.reembolsoAlvoCentavos, 0);
+      expect(somaAlvos).toBe(123457);
     });
   });
 });
@@ -362,6 +441,99 @@ describe('criarLancamento — validação', () => {
   });
 });
 
+describe('criarLancamento — cardId forçado para métodos não-crédito', () => {
+  it('zera cardId (e invoiceId) mesmo que a entrada mande um cartão para um método não-crédito', async () => {
+    await comRollback(async (tx) => {
+      const { categoria, subcategoria, cartao } = await cenario(tx);
+
+      // Simula uma chamada direta à função de dados (ex.: o Plano 3, que não
+      // passa pela tela) mandando um cardId por engano junto de um método
+      // que não é CREDITO. A interface hoje já evita isso, mas a função de
+      // dados precisa impor a regra sozinha.
+      const { ids } = await criarLancamento(
+        {
+          descricao: 'PIX com cardId indevido',
+          valorCentavos: 1000,
+          data: '2026-08-20',
+          metodo: 'PIX',
+          cardId: cartao.id,
+          budgetCategoryId: categoria.id,
+          subcategoryId: subcategoria.id,
+          parcelas: 1,
+          reembolsoAlvoCentavos: 0,
+        },
+        tx,
+      );
+
+      const linha = await tx.transaction.findUnique({
+        where: { id: ids[0] },
+        select: { cardId: true, invoiceId: true },
+      });
+      expect(linha?.cardId).toBeNull();
+      expect(linha?.invoiceId).toBeNull();
+    });
+  });
+});
+
+describe('apagarLancamento — protege faturas já reconciliadas', () => {
+  it('rejeita apagar um lançamento cuja fatura está FECHADA', async () => {
+    await comRollback(async (tx) => {
+      const { categoria, subcategoria, cartao } = await cenario(tx);
+      const { ids } = await criarLancamento(
+        {
+          descricao: 'Compra única no crédito',
+          valorCentavos: 10000,
+          data: '2026-08-20',
+          metodo: 'CREDITO',
+          cardId: cartao.id,
+          budgetCategoryId: categoria.id,
+          subcategoryId: subcategoria.id,
+          parcelas: 1,
+          reembolsoAlvoCentavos: 0,
+        },
+        tx,
+      );
+
+      const linha = await tx.transaction.findUnique({
+        where: { id: ids[0] },
+        select: { invoiceId: true },
+      });
+      await fecharFatura(linha!.invoiceId!, tx);
+
+      await expect(apagarLancamento(ids[0], tx)).rejects.toThrow();
+
+      // A parcela continua lá — nada foi apagado.
+      const setembro = await listarLancamentos('2026-09', tx);
+      expect(setembro.find((l) => l.id === ids[0])).toBeDefined();
+    });
+  });
+
+  it('continua apagando normalmente quando a fatura está ABERTA', async () => {
+    await comRollback(async (tx) => {
+      const { categoria, subcategoria, cartao } = await cenario(tx);
+      const { ids } = await criarLancamento(
+        {
+          descricao: 'Compra única no crédito',
+          valorCentavos: 10000,
+          data: '2026-08-20',
+          metodo: 'CREDITO',
+          cardId: cartao.id,
+          budgetCategoryId: categoria.id,
+          subcategoryId: subcategoria.id,
+          parcelas: 1,
+          reembolsoAlvoCentavos: 0,
+        },
+        tx,
+      );
+
+      await apagarLancamento(ids[0], tx);
+
+      const setembro = await listarLancamentos('2026-09', tx);
+      expect(setembro.find((l) => l.id === ids[0])).toBeUndefined();
+    });
+  });
+});
+
 describe('apagarGrupo', () => {
   it('apaga todas as parcelas de uma compra parcelada', async () => {
     await comRollback(async (tx) => {
@@ -389,6 +561,42 @@ describe('apagarGrupo', () => {
       for (const competencia of ['2026-09', '2026-10', '2026-11']) {
         const lista = await listarLancamentos(competencia, tx);
         expect(lista.filter((l) => l.descricao === 'TV')).toHaveLength(0);
+      }
+    });
+  });
+
+  it('rejeita apagar o grupo inteiro se qualquer parcela estiver numa fatura FECHADA, sem apagar nada', async () => {
+    await comRollback(async (tx) => {
+      const { categoria, subcategoria, cartao } = await cenario(tx);
+      const descricao = 'TV com fatura fechada no meio do parcelamento';
+      await criarLancamento(
+        {
+          descricao,
+          valorCentavos: 60000,
+          data: '2026-08-20',
+          metodo: 'CREDITO',
+          cardId: cartao.id,
+          budgetCategoryId: categoria.id,
+          subcategoryId: subcategoria.id,
+          parcelas: 3,
+          reembolsoAlvoCentavos: 0,
+        },
+        tx,
+      );
+
+      const setembro = await listarLancamentos('2026-09', tx);
+      const grupo = setembro.find((l) => l.descricao === descricao)!.grupoParcelamentoId!;
+
+      const faturas = await listarFaturas(cartao.id, tx);
+      const faturaDeSetembro = faturas.find((f) => f.competencia === '2026-09')!;
+      await fecharFatura(faturaDeSetembro.id, tx);
+
+      await expect(apagarGrupo(grupo, tx)).rejects.toThrow();
+
+      // Nenhuma parcela foi apagada — nem as que estavam em faturas ABERTA.
+      for (const competencia of ['2026-09', '2026-10', '2026-11']) {
+        const lista = await listarLancamentos(competencia, tx);
+        expect(lista.filter((l) => l.descricao === descricao)).toHaveLength(1);
       }
     });
   });

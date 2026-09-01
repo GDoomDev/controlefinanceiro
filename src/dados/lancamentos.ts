@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
 import { type Competencia, lerDataCivil } from '@/dominio/data';
+import { dividirParcelas } from '@/dominio/dinheiro';
 import { type MetodoPagamento, planejarLancamento } from '@/dominio/lancamento';
 
 import { buscarCartao, regraDoCartao } from './cartoes';
@@ -105,6 +106,13 @@ export async function criarLancamento(
 
   const grupoParcelamentoId = plano.length > 1 ? randomUUID() : null;
 
+  // O alvo de reembolso vale para a compra inteira, então é dividido entre as
+  // parcelas do mesmo jeito que o valor — pela mesma `dividirParcelas` — para
+  // que o alvo de nenhuma linha ultrapasse o próprio valor daquela linha (spec,
+  // seção 3: "reembolsoAlvoCentavos fica entre 0 e valorCentavos" é uma regra
+  // por linha, não pela compra inteira).
+  const alvos = dividirParcelas(entrada.reembolsoAlvoCentavos, plano.length);
+
   const gravar = async (tx: ClientePrisma): Promise<string[]> => {
     const ids: string[] = [];
 
@@ -121,15 +129,15 @@ export async function criarLancamento(
           valorCentavos: parcela.valorCentavos,
           data: entrada.data,
           metodo: entrada.metodo,
-          cardId: entrada.cardId,
+          // Métodos que não são crédito exigem cardId nulo (spec, seção 3) —
+          // impomos isso aqui, na função de dados, e não confiamos só na
+          // interface para mandar `cardId` vazio.
+          cardId: entrada.metodo === 'CREDITO' ? entrada.cardId : null,
           invoiceId,
           budgetCategoryId: entrada.budgetCategoryId,
           subcategoryId: entrada.subcategoryId,
           competencia: parcela.competencia,
-          // O alvo de reembolso vale para a compra inteira, então fica na
-          // primeira parcela — só ela representa a dívida de terceiro.
-          reembolsoAlvoCentavos:
-            parcela.parcelaNum === 1 ? entrada.reembolsoAlvoCentavos : 0,
+          reembolsoAlvoCentavos: alvos[parcela.parcelaNum - 1],
           grupoParcelamentoId,
           parcelaNum: parcela.parcelaNum,
           parcelaTotal: parcela.parcelaTotal,
@@ -192,16 +200,45 @@ export async function listarLancamentos(
   }));
 }
 
+/**
+ * Apaga um lançamento — mas nunca um que esteja numa fatura já reconciliada
+ * (FECHADA ou PAGA). Apagar ali alteraria silenciosamente um histórico que já
+ * foi fechado ou pago; o usuário precisa reabrir a fatura antes, se for o caso.
+ */
 export async function apagarLancamento(
   id: string,
   cliente: ClientePrisma = prisma,
 ): Promise<void> {
+  const transacao = await cliente.transaction.findUnique({
+    where: { id },
+    select: { invoice: { select: { status: true } } },
+  });
+  if (transacao?.invoice && transacao.invoice.status !== 'ABERTA') {
+    throw new Error(
+      `Não é possível apagar um lançamento cuja fatura já está ${transacao.invoice.status}`,
+    );
+  }
   await cliente.transaction.delete({ where: { id } });
 }
 
+/**
+ * Apaga o grupo inteiro de uma compra parcelada — tudo ou nada. Se qualquer
+ * parcela estiver numa fatura não-ABERTA, rejeita o apagamento do grupo
+ * inteiro (nunca apaga parcialmente).
+ */
 export async function apagarGrupo(
   grupoParcelamentoId: string,
   cliente: ClientePrisma = prisma,
 ): Promise<void> {
+  const transacoes = await cliente.transaction.findMany({
+    where: { grupoParcelamentoId },
+    select: { invoice: { select: { status: true } } },
+  });
+  const faturaNaoAberta = transacoes.find((t) => t.invoice && t.invoice.status !== 'ABERTA');
+  if (faturaNaoAberta) {
+    throw new Error(
+      `Não é possível apagar o grupo: ao menos uma parcela está numa fatura ${faturaNaoAberta.invoice!.status}`,
+    );
+  }
   await cliente.transaction.deleteMany({ where: { grupoParcelamentoId } });
 }
