@@ -1,0 +1,95 @@
+.cabecalho {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.meses {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 13px;
+}
+
+.mesLink {
+  color: #6b7280;
+  text-decoration: none;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.mesLink:hover {
+  background: #f3f4f6;
+}
+
+.mesAtual {
+  font-weight: 600;
+  color: #111827;
+}
+
+.novo {
+  background: #111827;
+  color: #fff;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.tabela th {
+  text-align: left;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #9ca3af;
+  font-weight: 500;
+  padding: 0 8px 8px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.tabela td {
+  padding: 9px 8px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.valor {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.meta {
+  color: #9ca3af;
+  font-size: 11.5px;
+}
+
+.total {
+  margin-top: 14px;
+  font-size: 14px;
+  text-align: right;
+}
+
+.vazio {
+  padding: 28px 14px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.apagar {
+  background: none;
+  border: none;
+  color: #dc2626;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 2px 6px;
+}
