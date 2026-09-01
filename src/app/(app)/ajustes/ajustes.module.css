@@ -1,0 +1,82 @@
+.secao {
+  margin-bottom: 36px;
+}
+
+.titulo {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.linha {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rotulo {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.entrada {
+  border: 1px solid #d1d5db;
+  border-radius: 7px;
+  padding: 7px 9px;
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.botao {
+  background: #111827;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  padding: 8px 14px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.lista {
+  border: 1px solid #e5e7eb;
+  border-radius: 9px;
+  overflow: hidden;
+}
+
+.item {
+  padding: 10px 13px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.item + .item {
+  border-top: 1px solid #f3f4f6;
+}
+
+.cor {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.subs {
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+.vazio {
+  padding: 14px;
+  font-size: 13px;
+  color: #9ca3af;
+}
