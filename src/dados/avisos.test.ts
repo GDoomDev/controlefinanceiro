@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { competenciaDe, dataCivilEm, formatarDataCivil } from '@/dominio/data';
 import { avisosDoMes } from './avisos';
+import { criarCartao } from './cartoes';
 import { criarCategoria, criarSubcategoria } from './categorias';
 import { criarLancamento } from './lancamentos';
 import { definirAlocacao } from './orcamentos';
@@ -90,6 +92,54 @@ describe('avisosDoMes', () => {
       await categoriaComGasto(tx, 'Saúde', 30000, 9000);
       const { visiveis } = await avisosDoMes('2026-09', tx);
       expect(visiveis.find((a) => a.texto.includes('Saúde'))).toBeUndefined();
+    });
+  });
+
+  it('avisa sobre fatura perto de fechar, com o total real da fatura aberta', async () => {
+    await comRollback(async (tx) => {
+      const hoje = dataCivilEm(new Date());
+      const amanha = dataCivilEm(new Date(Date.now() + 24 * 60 * 60 * 1000));
+      const mesAtual = competenciaDe(hoje);
+
+      // O dia de fechamento é calculado a partir de "amanhã" (e não fixo,
+      // tipo 25), para a fatura que uma compra de HOJE abriria fechar em ~1
+      // dia — dentro do limiar de 2 dias que dispara o aviso — não importa em
+      // que dia real este teste rodar. `dataCivilEm` já lida com virada de
+      // mês/ano.
+      const cartao = await criarCartao(
+        { nome: 'Cartão Teste Fatura Próxima', diaFechamento: amanha.dia, diaVencimento: 10 },
+        tx,
+      );
+
+      const cat = await criarCategoria({ nome: 'Compras', corSlot: 1 }, tx);
+      const sub = await criarSubcategoria(
+        { budgetCategoryId: cat.id, nome: 'Compras-sub' },
+        tx,
+      );
+
+      // Compra de hoje no crédito: cai exatamente na fatura "aberta" que
+      // avisosDoMes calcula via faturaDaCompra — a mesma que está prestes a
+      // fechar.
+      await criarLancamento(
+        {
+          descricao: 'Compra no crédito',
+          valorCentavos: 15000,
+          data: formatarDataCivil(hoje),
+          metodo: 'CREDITO',
+          cardId: cartao.id,
+          budgetCategoryId: cat.id,
+          subcategoryId: sub.id,
+          parcelas: 1,
+          reembolsoAlvoCentavos: 0,
+        },
+        tx,
+      );
+
+      const { visiveis } = await avisosDoMes(mesAtual, tx);
+      const aviso = visiveis.find((a) => a.texto.includes('Cartão Teste Fatura Próxima'));
+      expect(aviso).toBeDefined();
+      expect(aviso?.severidade).toBe('AMARELO');
+      expect(aviso?.texto).toContain('R$ 150,00');
     });
   });
 
