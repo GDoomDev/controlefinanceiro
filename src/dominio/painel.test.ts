@@ -129,6 +129,25 @@ describe('ordenarPorCriticidade', () => {
     ]);
   });
 
+  it('não gera NaN ao comparar duas categorias sem orçamento e gasto negativo', () => {
+    // Ambas ATIVO: gasto < orcado (0), possível quando um estorno cai num mês
+    // de pouco gasto (spec, seção 6.2). O comparador antigo dividia
+    // gasto/orcado, produzindo -Infinity para as duas e NaN na subtração —
+    // deixando a ordem entre elas indefinida. A comparação por multiplicação
+    // cruzada nunca divide, então isso não deve mais acontecer.
+    const lista = [orc('Estorno A', 0, -5000), orc('Estorno B', 0, -10000)];
+
+    expect(() => ordenarPorCriticidade(lista)).not.toThrow();
+
+    const resultado = ordenarPorCriticidade(lista);
+    expect(resultado).toHaveLength(2);
+    expect(resultado.map((o) => o.nome).sort()).toEqual(['Estorno A', 'Estorno B']);
+
+    // Determinístico: chamar de novo produz a mesma ordem — se houvesse NaN
+    // no comparador, a ordem relativa entre elas ficaria indefinida.
+    expect(ordenarPorCriticidade(lista)).toEqual(resultado);
+  });
+
   it('não modifica o array recebido', () => {
     // Ambos são ATIVO (gasto < orçado). A entra com 10% consumido, B com 90%.
     // A ordem correta de saída é [B, A] (maior % consumido primeiro).

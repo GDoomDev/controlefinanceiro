@@ -74,9 +74,13 @@ export function ordenarPorCriticidade(
     }
 
     if (estadoA === 'ATIVO') {
-      // Maior percentual consumido primeiro. Dentro de ATIVO o orçado é sempre
-      // maior que o gasto, logo maior que zero — não há divisão por zero aqui.
-      return b.gastoCentavos / b.orcadoCentavos - a.gastoCentavos / a.orcadoCentavos;
+      // Comparação por multiplicação cruzada em vez de divisão — nunca produz
+      // NaN/Infinity, mesmo quando orcadoCentavos é 0 (categoria sem orçamento
+      // com gasto negativo, possível após um estorno — spec, seção 6.2).
+      // Equivale a gastoA/orcadoA vs gastoB/orcadoB, mas sem dividir.
+      return (
+        b.gastoCentavos * a.orcadoCentavos - a.gastoCentavos * b.orcadoCentavos
+      );
     }
 
     // Concluídos: maior orçamento primeiro, só para dar uma ordem estável.
