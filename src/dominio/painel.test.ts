@@ -111,7 +111,11 @@ describe('ordenarPorCriticidade', () => {
   });
 
   it('não modifica o array recebido', () => {
-    const lista = [orc('A', 100, 200), orc('B', 100, 0)];
+    // Ambos são ATIVO (gasto < orçado). A entra com 10% consumido, B com 90%.
+    // A ordem correta de saída é [B, A] (maior % consumido primeiro).
+    // Se a função mutasse o array no lugar, lista seria reordenado para [B, A],
+    // diferente de copia que permanece [A, B]. Este teste pega essa regressão.
+    const lista = [orc('A', 100, 10), orc('B', 100, 90)];
     const copia = [...lista];
     ordenarPorCriticidade(lista);
     expect(lista).toEqual(copia);
