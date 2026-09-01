@@ -1,0 +1,188 @@
+.cabecalho {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.meses {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 13px;
+}
+
+.mesLink {
+  color: #6b7280;
+  text-decoration: none;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.mesLink:hover {
+  background: #f3f4f6;
+}
+
+.mesAtual {
+  font-weight: 600;
+  color: #111827;
+}
+
+.nota {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 0 0 16px;
+}
+
+.grafico {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.coluna {
+  flex: 1 1 0;
+  min-width: 42px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Duas metades de altura fixa com a linha do zero entre elas: a barra positiva
+   cresce para baixo dentro da metade de cima (ancorada no fundo), e a negativa
+   para baixo a partir do topo da metade de baixo. */
+.acima {
+  height: 84px;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+
+.abaixo {
+  height: 84px;
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+}
+
+.zero {
+  height: 1px;
+  width: 100%;
+  background: #d1d5db;
+}
+
+.barra {
+  width: 100%;
+  border-radius: 3px 3px 0 0;
+}
+
+.barraNegativa {
+  width: 100%;
+  border-radius: 0 0 3px 3px;
+}
+
+/* Textura do mês futuro: distingue projeção de realizado sem usar cor.
+   As listras vão por cima da cor de fundo da própria barra.
+
+   ATENÇÃO: quem usa esta classe precisa aplicar a cor com `backgroundColor` no
+   style inline, NUNCA com o atalho `background`. O atalho zera o
+   `background-image` daqui, e a textura some sem erro nenhum — justamente o
+   sinal que o spec (seção 8.3) exige que não dependa de cor. */
+.projetado {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.55) 0,
+    rgba(255, 255, 255, 0.55) 3px,
+    transparent 3px,
+    transparent 7px
+  );
+}
+
+.corrente {
+  outline: 2px solid #111827;
+  outline-offset: 1px;
+  border-radius: 4px;
+}
+
+.rotulo {
+  font-size: 9.5px;
+  color: #6b7280;
+  margin-top: 5px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.legenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin: 16px 0 4px;
+  font-size: 11.5px;
+  color: #6b7280;
+}
+
+.legendaItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.amostra {
+  width: 13px;
+  height: 13px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-top: 18px;
+}
+
+.tabela th {
+  text-align: left;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #9ca3af;
+  font-weight: 600;
+  padding: 6px 8px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.tabela td {
+  padding: 7px 8px;
+  border-bottom: 1px solid #f3f4f6;
+  font-variant-numeric: tabular-nums;
+}
+
+.numero {
+  text-align: right;
+}
+
+.linhaCorrente {
+  background: #f9fafb;
+  font-weight: 600;
+}
+
+.marca {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #9ca3af;
+  margin-left: 6px;
+}
+
+.positivo {
+  color: #2a78d6;
+}
+
+.negativo {
+  color: #dc2626;
+}
