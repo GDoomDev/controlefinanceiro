@@ -50,6 +50,15 @@ describe('gerarAvisos — orçamentos', () => {
     expect(avisos).toEqual([]);
   });
 
+  it('89% consumido não dispara (abaixo do limiar de 90%)', () => {
+    const avisos = gerarAvisos(
+      vazio({
+        orcamentos: [{ nome: 'Quase', orcadoCentavos: 10000, gastoCentavos: 8900 }],
+      }),
+    );
+    expect(avisos).toEqual([]);
+  });
+
   it('não avisa sobre orçamento zerado sem gasto', () => {
     const avisos = gerarAvisos(
       vazio({ orcamentos: [{ nome: 'Vazio', orcadoCentavos: 0, gastoCentavos: 0 }] }),
@@ -80,6 +89,18 @@ describe('gerarAvisos — outras fontes', () => {
     expect(avisos[0].texto).toContain('Nubank');
   });
 
+  it('fatura fechando em exatamente 2 dias dispara o aviso', () => {
+    const avisos = gerarAvisos(
+      vazio({
+        faturasProximas: [
+          { cartaoNome: 'Nubank', diasParaFechar: 2, totalCentavos: 294000 },
+        ],
+      }),
+    );
+    expect(avisos).toHaveLength(1);
+    expect(avisos[0].severidade).toBe('AMARELO');
+  });
+
   it('avisa em azul sobre reembolso pendente há mais de 30 dias', () => {
     const avisos = gerarAvisos(
       vazio({ reembolsoPendente: { totalCentavos: 48000, diasDoMaisAntigo: 42 } }),
@@ -93,6 +114,13 @@ describe('gerarAvisos — outras fontes', () => {
   it('não avisa sobre reembolso recente', () => {
     const avisos = gerarAvisos(
       vazio({ reembolsoPendente: { totalCentavos: 48000, diasDoMaisAntigo: 5 } }),
+    );
+    expect(avisos).toEqual([]);
+  });
+
+  it('reembolso pendente há exatamente 30 dias não dispara (a regra é mais de 30)', () => {
+    const avisos = gerarAvisos(
+      vazio({ reembolsoPendente: { totalCentavos: 48000, diasDoMaisAntigo: 30 } }),
     );
     expect(avisos).toEqual([]);
   });
@@ -156,6 +184,18 @@ describe('limitarAvisos', () => {
     const { visiveis, ocultos } = limitarAvisos([1, 2, 3, 4, 5, 6, 7].map(avisoFalso));
     expect(visiveis).toHaveLength(5);
     expect(ocultos).toBe(2);
+  });
+
+  it('cinco avisos cabem todos, sem ocultar nada', () => {
+    const { visiveis, ocultos } = limitarAvisos([1, 2, 3, 4, 5].map(avisoFalso));
+    expect(visiveis).toHaveLength(5);
+    expect(ocultos).toBe(0);
+  });
+
+  it('seis avisos mostram cinco e ocultam exatamente um', () => {
+    const { visiveis, ocultos } = limitarAvisos([1, 2, 3, 4, 5, 6].map(avisoFalso));
+    expect(visiveis).toHaveLength(5);
+    expect(ocultos).toBe(1);
   });
 
   it('lista vazia devolve vazio', () => {
