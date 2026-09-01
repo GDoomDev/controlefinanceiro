@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   type OrcamentoDoPainel,
   estadoDoOrcamento,
+  estaProximoDoLimite,
   faixasDoHeroi,
   ordenarPorCriticidade,
   restanteDoOrcamento,
@@ -48,6 +49,24 @@ describe('restanteDoOrcamento', () => {
 
   it('fica negativo quando estoura', () => {
     expect(restanteDoOrcamento(orc('Lazer', 50000, 62000))).toBe(-12000);
+  });
+});
+
+describe('estaProximoDoLimite', () => {
+  it('é true quando consumiu 90% ou mais', () => {
+    expect(estaProximoDoLimite(orc('Transporte', 40000, 38500))).toBe(true); // 96%
+  });
+
+  it('é false abaixo de 90%', () => {
+    expect(estaProximoDoLimite(orc('Alimentação', 120000, 94000))).toBe(false); // 78%
+  });
+
+  it('é false para orçamento zerado', () => {
+    expect(estaProximoDoLimite(orc('Vazio', 0, 0))).toBe(false);
+  });
+
+  it('bate exatamente com o mesmo limiar de avisos.ts em 90%', () => {
+    expect(estaProximoDoLimite(orc('Exato', 10000, 9000))).toBe(true);
   });
 });
 

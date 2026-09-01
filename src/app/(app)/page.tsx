@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { resumoDoMes } from '@/dados/painel';
 import { competenciaDe, dataCivilEm, somarMeses } from '@/dominio/data';
 import { formatarBRL } from '@/dominio/dinheiro';
+import { estaProximoDoLimite } from '@/dominio/painel';
 
 import estilos from './painel.module.css';
 
@@ -94,7 +95,7 @@ export default async function Painel({
                 ? VERMELHO
                 : c.estado === 'CONCLUIDO'
                   ? CINZA
-                  : c.restanteCentavos <= c.orcadoCentavos * 0.1
+                  : estaProximoDoLimite(c)
                     ? AMBAR
                     : VERDE;
 

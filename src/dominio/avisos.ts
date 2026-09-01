@@ -32,7 +32,7 @@ export interface EntradaAvisos {
 }
 
 /** Um orçamento entra em atenção a partir deste percentual consumido. */
-const LIMIAR_ATENCAO = 0.9;
+export const LIMIAR_ATENCAO = 0.9;
 /** Uma fatura vira aviso quando falta este tanto de dias para fechar. */
 const DIAS_FATURA_PROXIMA = 2;
 /** Um reembolso vira aviso depois deste tanto de dias sem receber. */

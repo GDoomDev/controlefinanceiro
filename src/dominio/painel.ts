@@ -7,6 +7,7 @@
  */
 
 import type { Centavos } from './dinheiro';
+import { LIMIAR_ATENCAO } from './avisos';
 
 export interface OrcamentoDoPainel {
   categoriaId: string;
@@ -27,6 +28,18 @@ export function estadoDoOrcamento(o: OrcamentoDoPainel): EstadoOrcamento {
 /** O que ainda cabe no orçamento. Negativo quando estourou. */
 export function restanteDoOrcamento(o: OrcamentoDoPainel): Centavos {
   return o.orcadoCentavos - o.gastoCentavos;
+}
+
+/**
+ * Um orçamento ATIVO está perto do limite quando já consumiu o mesmo
+ * percentual que dispara o aviso da central de avisos (spec, seção 8.1) —
+ * reusa o limiar de `avisos.ts` em vez de duplicá-lo, para os dois nunca
+ * divergirem silenciosamente. Comparação inteira (sem ponto flutuante):
+ * gasto/orcado >= limiar  ⟺  gasto * 1000 >= orcado * (limiar * 1000).
+ */
+export function estaProximoDoLimite(o: OrcamentoDoPainel): boolean {
+  if (o.orcadoCentavos <= 0) return false;
+  return o.gastoCentavos * 1000 >= o.orcadoCentavos * Math.round(LIMIAR_ATENCAO * 1000);
 }
 
 const PESO_DO_ESTADO: Record<EstadoOrcamento, number> = {
