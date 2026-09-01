@@ -10,7 +10,14 @@ const formatador = new Intl.NumberFormat('pt-BR', {
   currency: 'BRL',
 });
 
-/** Converte reais para centavos. Use só em seeds e testes, nunca em cálculo. */
+/**
+ * Converte um valor decimal em reais (o formato em que um humano digita ou em
+ * que dados de fora chegam) para centavos inteiros. É a fronteira de entrada:
+ * use uma vez, no ponto em que o valor decimal entra no sistema — seeds,
+ * testes, ou o campo de valor de um formulário. Nunca encadeie cálculos em
+ * reais e converta só no final; todo cálculo dentro do domínio já deve estar
+ * em centavos.
+ */
 export function emCentavos(reais: number): Centavos {
   return Math.round(reais * 100);
 }
