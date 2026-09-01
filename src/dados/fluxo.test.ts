@@ -167,4 +167,38 @@ describe('fluxoDeMeses', () => {
   it('rejeita competência fora do formato', async () => {
     await expect(fluxoDeMeses('2099/09')).rejects.toThrow('Competência inválida');
   });
+
+  it('ignora receita cancelada, igual a receitaRealizadaDoMes', async () => {
+    await comRollback(async (tx) => {
+      await criarReceita(
+        { descricao: 'Salário', valorCentavos: 500000, data: '2020-01-05', metodo: 'PIX' },
+        tx,
+      );
+      // Nenhum caminho de escrita hoje soft-cancela uma receita (`apagarReceita`
+      // apaga de fato) — criamos a linha direto para simular o dia em que algum
+      // caminho futuro deixar uma receita CANCELADA no banco.
+      await tx.transaction.create({
+        data: {
+          tipo: 'RECEITA',
+          descricao: 'Cancelada',
+          valorCentavos: 999999,
+          data: '2020-01-06',
+          metodo: 'PIX',
+          competencia: '2020-01',
+          status: 'CANCELADA',
+          cardId: null,
+          invoiceId: null,
+          budgetCategoryId: null,
+          subcategoryId: null,
+        },
+      });
+
+      const fluxo = await fluxoDeMeses('2020-01', tx);
+      const resumo = await resumoDoMes('2020-01', tx);
+
+      const central = fluxo.pontos[MESES_PARA_TRAS];
+      expect(central.receitaCentavos).toBe(500000);
+      expect(central.receitaCentavos).toBe(resumo.receitaRealizada);
+    });
+  });
 });

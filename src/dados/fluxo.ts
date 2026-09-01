@@ -72,7 +72,7 @@ export async function fluxoDeMeses(
       },
     }),
     cliente.transaction.findMany({
-      where: { competencia: { in: meses }, tipo: 'RECEITA' },
+      where: { competencia: { in: meses }, tipo: 'RECEITA', status: 'ATIVA' },
       select: { competencia: true, valorCentavos: true },
     }),
     cliente.expectedIncome.findMany({
