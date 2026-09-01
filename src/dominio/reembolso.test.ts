@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   type ParcelaEstornavel,
+  estadoDoReembolso,
+  ordenarPorAntiguidade,
   pendente,
   planejarEstorno,
   planejarEstornoParcial,
@@ -133,5 +135,61 @@ describe('planejarEstornoParcial', () => {
 
   it('rejeita valor não inteiro', () => {
     expect(() => planejarEstornoParcial('t1', 100.5, '2026-11')).toThrow();
+  });
+});
+
+describe('estadoDoReembolso', () => {
+  it('alvo zero não é reembolsável, mesmo sem recebimento', () => {
+    expect(estadoDoReembolso(0, [])).toBe('NAO_REEMBOLSAVEL');
+  });
+
+  it('alvo positivo sem recebimento nenhum está pendente', () => {
+    expect(estadoDoReembolso(20000, [])).toBe('PENDENTE');
+  });
+
+  it('recebimento menor que o alvo é parcial', () => {
+    expect(estadoDoReembolso(20000, [{ valorCentavos: 5000 }])).toBe('PARCIAL');
+  });
+
+  it('recebimentos que somam o alvo quitam', () => {
+    expect(
+      estadoDoReembolso(20000, [{ valorCentavos: 12000 }, { valorCentavos: 8000 }]),
+    ).toBe('QUITADO');
+  });
+
+  it('está quitado no centavo exato, não um antes', () => {
+    expect(estadoDoReembolso(20000, [{ valorCentavos: 19999 }])).toBe('PARCIAL');
+    expect(estadoDoReembolso(20000, [{ valorCentavos: 20000 }])).toBe('QUITADO');
+  });
+});
+
+describe('ordenarPorAntiguidade', () => {
+  it('põe o mais parado na frente', () => {
+    const ordenados = ordenarPorAntiguidade([
+      { diasParado: 3, pendenteCentavos: 100 },
+      { diasParado: 40, pendenteCentavos: 100 },
+      { diasParado: 12, pendenteCentavos: 100 },
+    ]);
+
+    expect(ordenados.map((r) => r.diasParado)).toEqual([40, 12, 3]);
+  });
+
+  it('desempata pelo maior pendente', () => {
+    const ordenados = ordenarPorAntiguidade([
+      { diasParado: 10, pendenteCentavos: 500 },
+      { diasParado: 10, pendenteCentavos: 9000 },
+    ]);
+
+    expect(ordenados.map((r) => r.pendenteCentavos)).toEqual([9000, 500]);
+  });
+
+  it('não modifica o array recebido', () => {
+    const entrada = [
+      { diasParado: 1, pendenteCentavos: 100 },
+      { diasParado: 90, pendenteCentavos: 100 },
+    ];
+    ordenarPorAntiguidade(entrada);
+
+    expect(entrada.map((r) => r.diasParado)).toEqual([1, 90]);
   });
 });

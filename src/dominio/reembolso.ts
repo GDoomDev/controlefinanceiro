@@ -98,3 +98,42 @@ export function planejarEstornoParcial(
   }
   return { transactionId, valorCentavos, competenciaCredito };
 }
+
+/**
+ * Os quatro estados do spec (seção 6.1). Sempre DERIVADO do alvo e dos
+ * recebimentos — nunca há um campo de status no banco que possa divergir.
+ */
+export type EstadoReembolso = 'NAO_REEMBOLSAVEL' | 'PENDENTE' | 'PARCIAL' | 'QUITADO';
+
+export function estadoDoReembolso(
+  alvoCentavos: Centavos,
+  recebimentos: Recebimento[],
+): EstadoReembolso {
+  if (alvoCentavos <= 0) return 'NAO_REEMBOLSAVEL';
+
+  const total = recebido(recebimentos);
+  if (total <= 0) return 'PENDENTE';
+  if (total >= alvoCentavos) return 'QUITADO';
+  return 'PARCIAL';
+}
+
+export interface ReembolsoOrdenavel {
+  diasParado: number;
+  pendenteCentavos: Centavos;
+}
+
+/**
+ * Mais parado primeiro; empate vai para o maior pendente.
+ *
+ * A tela responde "quem me deve?", e o sinal de risco que o app já elegeu
+ * para o assunto é a idade — o aviso azul do Painel dispara por dias parados,
+ * não por valor (spec, seção 8.1). Quem está há mais tempo sem pagar é quem
+ * precisa ser cobrado.
+ *
+ * Devolve um array novo; não modifica o recebido.
+ */
+export function ordenarPorAntiguidade<T extends ReembolsoOrdenavel>(itens: T[]): T[] {
+  return [...itens].sort(
+    (a, b) => b.diasParado - a.diasParado || b.pendenteCentavos - a.pendenteCentavos,
+  );
+}
