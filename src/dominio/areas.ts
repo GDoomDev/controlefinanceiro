@@ -27,7 +27,8 @@ function percentual(parte: Centavos, total: Centavos): number {
 export interface GastoDeOrcamento {
   categoriaId: string;
   nome: string;
-  corSlot: number;
+  corSlot: number | null;
+  corPersonalizada?: string | null;
   /** Líquido do mês. Pode ser negativo depois de um estorno. */
   gastoCentavos: Centavos;
 }
@@ -38,6 +39,7 @@ export interface SegmentoDaComposicao {
   nome: string;
   /** `null` marca o segmento cinza "Outras". */
   corSlot: number | null;
+  corPersonalizada?: string | null;
   gastoCentavos: Centavos;
   percentual: number;
 }
@@ -71,6 +73,7 @@ export function composicaoPorOrcamento(gastos: GastoDeOrcamento[]): Composicao {
     categoriaId: g.categoriaId,
     nome: g.nome,
     corSlot: g.corSlot,
+    corPersonalizada: g.corPersonalizada,
     gastoCentavos: g.gastoCentavos,
     percentual: percentual(g.gastoCentavos, totalCentavos),
   }));
@@ -81,6 +84,7 @@ export function composicaoPorOrcamento(gastos: GastoDeOrcamento[]): Composicao {
       categoriaId: '',
       nome: `Outras ${excedentes.length}`,
       corSlot: null,
+      corPersonalizada: null,
       gastoCentavos: soma,
       percentual: percentual(soma, totalCentavos),
     });
@@ -95,7 +99,8 @@ export interface EntradaDoRanking {
   categoriaId: string;
   nomeDoOrcamento: string;
   /** Herdado do orçamento-pai — o spec (seção 9) proíbe cor nova para subcategoria. */
-  corSlot: number;
+  corSlot: number | null;
+  corPersonalizada?: string | null;
   gastoCentavos: Centavos;
   quantidade: number;
   maiorLancamentoCentavos: Centavos;

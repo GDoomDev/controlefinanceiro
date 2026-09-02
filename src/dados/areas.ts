@@ -72,7 +72,7 @@ export async function areasDoMes(
     // Sem filtro de `arquivada`: uma categoria arquivada que ainda teve gasto
     // no mês precisa de nome e cor (spec, seção 7).
     cliente.budgetCategory.findMany({
-      select: { id: true, nome: true, corSlot: true },
+      select: { id: true, nome: true, corSlot: true, corPersonalizada: true },
     }),
     cliente.subcategory.findMany({
       select: { id: true, nome: true, budgetCategoryId: true },
@@ -107,6 +107,7 @@ export async function areasDoMes(
       categoriaId: id,
       nome: categoria.nome,
       corSlot: categoria.corSlot,
+      corPersonalizada: categoria.corPersonalizada,
       gastoCentavos,
     });
   }
@@ -128,6 +129,7 @@ export async function areasDoMes(
       categoriaId: sub.budgetCategoryId,
       nomeDoOrcamento: pai.nome,
       corSlot: pai.corSlot,
+      corPersonalizada: pai.corPersonalizada,
       gastoCentavos: stats.gastoCentavos,
       quantidade: stats.quantidade,
       maiorLancamentoCentavos: stats.maiorLancamentoCentavos,

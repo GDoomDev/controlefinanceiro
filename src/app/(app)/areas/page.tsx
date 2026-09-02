@@ -3,8 +3,8 @@ import Link from 'next/link';
 import { areasDoMes } from '@/dados/areas';
 import { competenciaDe, dataCivilEm, somarMeses } from '@/dominio/data';
 import { formatarBRL } from '@/dominio/dinheiro';
+import { corDaCategoria } from '@/dominio/paleta';
 
-import { corDoSlot } from '../cores';
 import estilos from './areas.module.css';
 
 /** Abaixo disso o rótulo não cabe no segmento e vira só cor + legenda. */
@@ -77,7 +77,7 @@ export default async function Areas({
                   className={`${estilos.segmento} ${ativo ? estilos.segmentoAtivo : ''}`}
                   style={{
                     width: `${s.percentual}%`,
-                    background: corDoSlot(s.corSlot),
+                    background: corDaCategoria(s),
                   }}
                 >
                   {s.percentual >= LARGURA_MINIMA_PARA_ROTULO ? s.nome : ''}
@@ -102,7 +102,7 @@ export default async function Areas({
               >
                 <span
                   className={estilos.ponto}
-                  style={{ background: corDoSlot(s.corSlot) }}
+                  style={{ background: corDaCategoria(s) }}
                 />
                 {s.nome}
                 <span className={estilos.legendaValor}>
@@ -159,7 +159,7 @@ export default async function Areas({
                   className={estilos.linhaPreenchimento}
                   style={{
                     width: `${Math.max(0, l.percentualDoMes)}%`,
-                    background: corDoSlot(l.corSlot),
+                    background: corDaCategoria(l),
                   }}
                 />
               </div>
