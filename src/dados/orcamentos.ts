@@ -11,7 +11,8 @@ import type { ClientePrisma } from './tipos';
 export interface OrcamentoDoMes {
   categoriaId: string;
   nome: string;
-  corSlot: number;
+  corSlot: number | null;
+  corPersonalizada?: string | null;
   valorCentavos: number;
   /**
    * Competência da linha que está valendo — igual a `mes` quando foi definida
@@ -89,6 +90,7 @@ export async function orcamentosDoMes(
       id: true,
       nome: true,
       corSlot: true,
+      corPersonalizada: true,
       alocacoes: { select: { vigenteDe: true, valorCentavos: true } },
     },
   });
@@ -97,6 +99,7 @@ export async function orcamentosDoMes(
     categoriaId: c.id,
     nome: c.nome,
     corSlot: c.corSlot,
+    corPersonalizada: c.corPersonalizada,
     valorCentavos: alocacaoVigente(c.alocacoes, mes),
     vigenteDe: origemDaAlocacao(c.alocacoes, mes),
   }));

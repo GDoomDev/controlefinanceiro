@@ -6,7 +6,7 @@ import { formatarBRL } from '@/dominio/dinheiro';
 
 import { acaoDefinirAlocacao, acaoRemoverAlocacao } from './acoes';
 import estilos from './orcamentos.module.css';
-import { CORES } from '../cores';
+import { corDaCategoria } from '@/dominio/paleta';
 
 export default async function Orcamentos({
   searchParams,
@@ -60,7 +60,7 @@ export default async function Orcamentos({
                 <div key={o.categoriaId} className={estilos.linha}>
                   <span
                     className={estilos.cor}
-                    style={{ background: CORES[o.corSlot - 1] }}
+                    style={{ background: corDaCategoria(o) }}
                   />
                   <span className={estilos.nome}>{o.nome}</span>
 

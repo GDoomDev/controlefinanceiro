@@ -25,7 +25,8 @@ import type { ClientePrisma } from './tipos';
 export interface CardDoPainel {
   categoriaId: string;
   nome: string;
-  corSlot: number;
+  corSlot: number | null;
+  corPersonalizada?: string | null;
   orcadoCentavos: number;
   gastoCentavos: number;
   restanteCentavos: number;
@@ -123,7 +124,7 @@ export async function resumoDoMes(
   const categoriasArquivadasComGasto = idsSoComGasto.length > 0
     ? await cliente.budgetCategory.findMany({
         where: { id: { in: idsSoComGasto } },
-        select: { id: true, nome: true, corSlot: true },
+        select: { id: true, nome: true, corSlot: true, corPersonalizada: true },
       })
     : [];
 
@@ -132,6 +133,7 @@ export async function resumoDoMes(
       categoriaId: o.categoriaId,
       nome: o.nome,
       corSlot: o.corSlot,
+      corPersonalizada: o.corPersonalizada,
       orcadoCentavos: o.valorCentavos,
       gastoCentavos: gastos.get(o.categoriaId) ?? 0,
     })),
@@ -139,6 +141,7 @@ export async function resumoDoMes(
       categoriaId: c.id,
       nome: c.nome,
       corSlot: c.corSlot,
+      corPersonalizada: c.corPersonalizada,
       orcadoCentavos: 0,
       gastoCentavos: gastos.get(c.id) ?? 0,
     })),
@@ -165,6 +168,7 @@ export async function resumoDoMes(
       categoriaId: o.categoriaId,
       nome: o.nome,
       corSlot: o.corSlot,
+      corPersonalizada: o.corPersonalizada,
       orcadoCentavos: o.orcadoCentavos,
       gastoCentavos: o.gastoCentavos,
       restanteCentavos: restanteDoOrcamento(o),

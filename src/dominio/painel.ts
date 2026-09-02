@@ -12,7 +12,8 @@ import { LIMIAR_ATENCAO } from './avisos';
 export interface OrcamentoDoPainel {
   categoriaId: string;
   nome: string;
-  corSlot: number;
+  corSlot: number | null;
+  corPersonalizada?: string | null;
   orcadoCentavos: Centavos;
   gastoCentavos: Centavos;
 }
