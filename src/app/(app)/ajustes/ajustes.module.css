@@ -121,3 +121,116 @@
   font-family: inherit;
   width: 120px;
 }
+
+.catalogoCores {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.swatch:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.swatchAtivo {
+  border-color: #111827;
+}
+
+.swatchPersonalizada {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: 2px dashed #9ca3af;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: pointer;
+  padding: 0;
+  position: relative;
+}
+
+.seletorNativo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.avisoDaltonismo {
+  font-size: 11px;
+  color: #9ca3af;
+  margin: 6px 0 0;
+  max-width: 320px;
+}
+
+.botaoPerigo {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 11px;
+  color: #b91c1c;
+  cursor: pointer;
+  text-decoration: underline;
+  font-family: inherit;
+  margin-left: auto;
+}
+
+.dialogo {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 20px;
+  max-width: 360px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+.dialogo::backdrop {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.dialogoAviso {
+  font-size: 12.5px;
+  color: #6b7280;
+  margin: 8px 0 16px;
+}
+
+.dialogoBotoes {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.botaoCancelar {
+  background: none;
+  border: 1px solid #d1d5db;
+  border-radius: 7px;
+  padding: 7px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.botaoConfirmarExclusao {
+  background: #b91c1c;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  padding: 7px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+}

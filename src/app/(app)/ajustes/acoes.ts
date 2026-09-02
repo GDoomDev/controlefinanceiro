@@ -2,7 +2,12 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { buscarSubcategoria, criarCategoria, criarSubcategoria } from '@/dados/categorias';
+import {
+  arquivarCategoria,
+  buscarSubcategoria,
+  criarCategoria,
+  criarSubcategoria,
+} from '@/dados/categorias';
 import { criarCartao } from '@/dados/cartoes';
 import { emCentavos } from '@/dominio/dinheiro';
 import type { MetodoPagamento } from '@/dominio/lancamento';
@@ -14,9 +19,13 @@ import {
 } from '@/dados/recorrentes';
 
 export async function acaoCriarCategoria(dadosForm: FormData): Promise<void> {
+  const corSlotBruto = String(dadosForm.get('corSlot') ?? '');
+  const corPersonalizadaBruta = String(dadosForm.get('corPersonalizada') ?? '');
+
   await criarCategoria({
     nome: String(dadosForm.get('nome') ?? ''),
-    corSlot: Number(dadosForm.get('corSlot')),
+    corSlot: corSlotBruto ? Number(corSlotBruto) : null,
+    corPersonalizada: corPersonalizadaBruta ? corPersonalizadaBruta : null,
   });
   revalidatePath('/ajustes');
 }
@@ -84,4 +93,15 @@ export async function acaoAlternarRecorrencia(dadosForm: FormData): Promise<void
     await retomarRecorrencia(id);
   }
   revalidatePath('/ajustes');
+}
+
+export async function acaoExcluirCategoria(dadosForm: FormData): Promise<void> {
+  await arquivarCategoria(String(dadosForm.get('id') ?? ''));
+  revalidatePath('/ajustes');
+  // Toda tela que lista orçamentos ativos também precisa parar de oferecer
+  // esta categoria como opção.
+  revalidatePath('/');
+  revalidatePath('/areas');
+  revalidatePath('/orcamentos');
+  revalidatePath('/lancamentos/novo');
 }

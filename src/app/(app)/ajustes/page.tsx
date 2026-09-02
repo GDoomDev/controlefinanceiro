@@ -1,7 +1,8 @@
-import { listarCategorias } from '@/dados/categorias';
+import { listarCategorias, slotsEmUso } from '@/dados/categorias';
 import { listarCartoes } from '@/dados/cartoes';
 import { listarRecorrentes } from '@/dados/recorrentes';
 import { formatarBRL } from '@/dominio/dinheiro';
+import { corDaCategoria } from '@/dominio/paleta';
 
 import {
   acaoCriarCartao,
@@ -10,15 +11,18 @@ import {
   acaoCriarRecorrencia,
   acaoEncerrarRecorrencia,
   acaoAlternarRecorrencia,
+  acaoExcluirCategoria,
 } from './acoes';
+import { BotaoExcluirCategoria } from './botao-excluir-categoria';
+import { SeletorDeCor } from './seletor-de-cor';
 import estilos from './ajustes.module.css';
-import { CORES } from '../cores';
 
 export default async function Ajustes() {
-  const [categorias, cartoes, recorrentes] = await Promise.all([
+  const [categorias, cartoes, recorrentes, ocupados] = await Promise.all([
     listarCategorias(),
     listarCartoes(),
     listarRecorrentes(),
+    slotsEmUso(),
   ]);
 
   return (
@@ -41,18 +45,7 @@ export default async function Ajustes() {
               placeholder="Alimentação"
             />
           </div>
-          <div className={estilos.campo}>
-            <label className={estilos.rotulo} htmlFor="cat-cor">
-              Cor
-            </label>
-            <select id="cat-cor" name="corSlot" className={estilos.entrada}>
-              {CORES.map((cor, i) => (
-                <option key={cor} value={i + 1}>
-                  {i + 1}
-                </option>
-              ))}
-            </select>
-          </div>
+          <SeletorDeCor ocupados={ocupados} />
           <button type="submit" className={estilos.botao}>
             Criar orçamento
           </button>
@@ -66,7 +59,7 @@ export default async function Ajustes() {
               <div key={c.id} className={estilos.item}>
                 <span
                   className={estilos.cor}
-                  style={{ background: CORES[c.corSlot - 1] }}
+                  style={{ background: corDaCategoria(c) }}
                 />
                 <strong>{c.nome}</strong>
                 <span className={estilos.subs}>
@@ -74,6 +67,11 @@ export default async function Ajustes() {
                     ? 'sem subcategorias'
                     : c.subcategorias.map((s) => s.nome).join(' · ')}
                 </span>
+                <BotaoExcluirCategoria
+                  categoriaId={c.id}
+                  categoriaNome={c.nome}
+                  acao={acaoExcluirCategoria}
+                />
               </div>
             ))
           )}
