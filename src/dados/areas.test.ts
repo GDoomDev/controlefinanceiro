@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import { areasDoMes } from './areas';
 import { arquivarCategoria, criarCategoria, criarSubcategoria } from './categorias';
+import { aplicarEstorno } from './estorno';
 import { criarLancamento } from './lancamentos';
+import { registrarRecebimento } from './reembolsos';
 import { comRollback } from './rollback';
 import type { ClientePrisma } from './tipos';
 
@@ -180,5 +182,53 @@ describe('areasDoMes', () => {
 
   it('rejeita competência fora do formato', async () => {
     await expect(areasDoMes('2099/09', null)).rejects.toThrow('Competência inválida');
+  });
+
+  it('estorno de despesa com reembolso já recebido não deixa crédito residual na composição', async () => {
+    await comRollback(async (tx) => {
+      const c = await cenario(tx);
+
+      const compra = await criarLancamento(
+        {
+          descricao: 'Compra reembolsável',
+          valorCentavos: 30000,
+          data: `${MES}-10`,
+          metodo: 'PIX',
+          cardId: null,
+          budgetCategoryId: c.alimentacao.id,
+          subcategoryId: c.mercado.id,
+          parcelas: 1,
+          reembolsoAlvoCentavos: 20000,
+        },
+        tx,
+      );
+
+      // O reembolso chega antes do estorno — cria um crédito de REEMBOLSO.
+      await registrarRecebimento(
+        { transactionId: compra.ids[0], valorCentavos: 20000, recebidoEm: `${MES}-15` },
+        tx,
+      );
+
+      // A despesa é estornada por inteiro (PIX, sem fatura, vira CANCELADA).
+      await aplicarEstorno(
+        {
+          transactionId: compra.ids[0],
+          modo: 'UNICO',
+          competenciaCredito: MES,
+          recebidoEm: `${MES}-20`,
+        },
+        tx,
+      );
+
+      const areas = await areasDoMes(MES, null, tx);
+
+      // A despesa cancelada some (correto); o crédito de REEMBOLSO cuja
+      // transação-pai também virou CANCELADA não pode continuar reduzindo a
+      // subcategoria — sem gasto nenhum no mês, ela não deve aparecer.
+      expect(areas.composicao.creditados).toEqual([]);
+      expect(
+        areas.ranking.linhas.find((l) => l.subcategoriaId === c.mercado.id),
+      ).toBeUndefined();
+    });
   });
 });

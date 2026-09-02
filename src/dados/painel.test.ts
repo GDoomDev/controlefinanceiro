@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { arquivarCategoria, criarCategoria, criarSubcategoria } from './categorias';
+import { aplicarEstorno } from './estorno';
 import { criarLancamento } from './lancamentos';
 import { definirAlocacao } from './orcamentos';
 import { resumoDoMes } from './painel';
+import { registrarRecebimento } from './reembolsos';
 import { criarReceita, criarReceitaPrevista } from './receitas';
 import { comRollback } from './rollback';
 import type { ClientePrisma } from './tipos';
@@ -208,6 +210,56 @@ describe('resumoDoMes', () => {
   it('rejeita competência inválida', async () => {
     await comRollback(async (tx) => {
       await expect(resumoDoMes('09/2026', tx)).rejects.toThrow();
+    });
+  });
+
+  it('estorno de despesa com reembolso já recebido não deixa crédito residual reduzindo o mês', async () => {
+    await comRollback(async (tx) => {
+      const categoria = await criarCategoria({ nome: 'Reembolsável', corSlot: 6 }, tx);
+      const sub = await criarSubcategoria(
+        { budgetCategoryId: categoria.id, nome: 'Item' },
+        tx,
+      );
+
+      const { ids } = await criarLancamento(
+        {
+          descricao: 'Compra reembolsável',
+          valorCentavos: 30000,
+          data: '2099-09-10',
+          metodo: 'PIX',
+          cardId: null,
+          budgetCategoryId: categoria.id,
+          subcategoryId: sub.id,
+          parcelas: 1,
+          reembolsoAlvoCentavos: 20000,
+        },
+        tx,
+      );
+
+      // O reembolso chega antes do estorno — cria um crédito de REEMBOLSO.
+      await registrarRecebimento(
+        { transactionId: ids[0], valorCentavos: 20000, recebidoEm: '2099-09-15' },
+        tx,
+      );
+
+      // A despesa é estornada por inteiro (PIX, sem fatura, vira CANCELADA).
+      await aplicarEstorno(
+        {
+          transactionId: ids[0],
+          modo: 'UNICO',
+          competenciaCredito: '2099-09',
+          recebidoEm: '2099-09-20',
+        },
+        tx,
+      );
+
+      const r = await resumoDoMes('2099-09', tx);
+      const card = r.cards.find((c) => c.categoriaId === categoria.id);
+
+      // A despesa cancelada já não conta (correto); o crédito de REEMBOLSO cuja
+      // transação-pai também virou CANCELADA não pode continuar reduzindo o
+      // mês — o efeito líquido do par despesa+crédito tem de ser zero.
+      expect(card?.gastoCentavos ?? 0).toBe(0);
     });
   });
 });

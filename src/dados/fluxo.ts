@@ -64,7 +64,11 @@ export async function fluxoDeMeses(
       },
     }),
     cliente.credito.findMany({
-      where: { competenciaCredito: { in: meses } },
+      // Um crédito cuja transação-pai virou CANCELADA (estorno de uma despesa
+      // que já tinha reembolso recebido) não pode continuar reduzindo o mês —
+      // a despesa já some da agregação (`cancelada`), então o crédito também
+      // tem de sumir junto (spec, seção 13: nenhuma agregação inclui CANCELADA).
+      where: { competenciaCredito: { in: meses }, transaction: { status: 'ATIVA' } },
       select: {
         competenciaCredito: true,
         valorCentavos: true,

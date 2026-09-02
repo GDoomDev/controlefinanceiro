@@ -3,10 +3,12 @@ import { describe, expect, it } from 'vitest';
 import { MESES_PARA_TRAS } from '@/dominio/fluxo';
 
 import { arquivarCategoria, criarCategoria, criarSubcategoria } from './categorias';
+import { aplicarEstorno } from './estorno';
 import { fluxoDeMeses } from './fluxo';
 import { criarLancamento } from './lancamentos';
 import { definirAlocacao } from './orcamentos';
 import { resumoDoMes } from './painel';
+import { registrarRecebimento } from './reembolsos';
 import { criarReceita, criarReceitaPrevista } from './receitas';
 import { comRollback } from './rollback';
 import type { ClientePrisma } from './tipos';
@@ -198,6 +200,69 @@ describe('fluxoDeMeses', () => {
 
       const central = fluxo.pontos[MESES_PARA_TRAS];
       expect(central.receitaCentavos).toBe(resumo.receitaRealizada);
+    });
+  });
+
+  it('estorno de despesa com reembolso já recebido não deixa crédito residual na projeção do mês futuro', async () => {
+    await comRollback(async (tx) => {
+      const categoria = await criarCategoria({ nome: 'Reembolsável', corSlot: 6 }, tx);
+      const sub = await criarSubcategoria(
+        { budgetCategoryId: categoria.id, nome: 'Item' },
+        tx,
+      );
+      // Orçado abaixo do gasto real — se o crédito residual "vazasse" para o
+      // comprometido, ele reduziria o gasto de 90000 para 70000 e o máx(orçado,
+      // gasto) mudaria de 90000 para 70000, revelando a diferença na sobra.
+      await definirAlocacao(
+        { budgetCategoryId: categoria.id, vigenteDe: '2099-09', valorCentavos: 50000 },
+        tx,
+      );
+
+      // Despesa real, que segue ATIVA — a base do comprometido do mês.
+      await gastar(tx, categoria.id, sub.id, '2099-09-05', 90000);
+
+      // Despesa reembolsável separada, que será estornada por inteiro.
+      const { ids } = await criarLancamento(
+        {
+          descricao: 'Compra reembolsável',
+          valorCentavos: 30000,
+          data: '2099-09-10',
+          metodo: 'PIX',
+          cardId: null,
+          budgetCategoryId: categoria.id,
+          subcategoryId: sub.id,
+          parcelas: 1,
+          reembolsoAlvoCentavos: 20000,
+        },
+        tx,
+      );
+
+      await registrarRecebimento(
+        { transactionId: ids[0], valorCentavos: 20000, recebidoEm: '2099-09-15' },
+        tx,
+      );
+
+      await aplicarEstorno(
+        {
+          transactionId: ids[0],
+          modo: 'UNICO',
+          competenciaCredito: '2099-09',
+          recebidoEm: '2099-09-20',
+        },
+        tx,
+      );
+
+      await criarReceitaPrevista(
+        { competencia: '2099-09', descricao: 'Salário', valorCentavos: 500000 },
+        tx,
+      );
+
+      const fluxo = await fluxoDeMeses('2099-09', tx);
+      const central = fluxo.pontos[MESES_PARA_TRAS];
+
+      // O crédito de REEMBOLSO cuja despesa-pai virou CANCELADA não pode
+      // reduzir o comprometido: o gasto real da categoria é 90000, nunca 70000.
+      expect(central.sobraCentavos).toBe(500000 - 90000);
     });
   });
 });
