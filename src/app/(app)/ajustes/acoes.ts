@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { criarCategoria, criarSubcategoria } from '@/dados/categorias';
+import { buscarSubcategoria, criarCategoria, criarSubcategoria } from '@/dados/categorias';
 import { criarCartao } from '@/dados/cartoes';
 import { emCentavos } from '@/dominio/dinheiro';
 import type { MetodoPagamento } from '@/dominio/lancamento';
@@ -41,13 +41,23 @@ export async function acaoCriarCartao(dadosForm: FormData): Promise<void> {
 export async function acaoCriarRecorrencia(dadosForm: FormData): Promise<void> {
   const metodo = String(dadosForm.get('metodo') ?? 'PIX') as MetodoPagamento;
   const cardIdBruto = String(dadosForm.get('cardId') ?? '');
+  const subcategoryId = String(dadosForm.get('subcategoryId') ?? '');
+
+  // O formulário só oferece a escolha de subcategoria (já rotulada com o
+  // orçamento pai) — o orçamento em si é derivado dela aqui, em vez de vir de
+  // um segundo campo independente que o usuário poderia preencher em
+  // desacordo com a subcategoria escolhida.
+  const subcategoria = await buscarSubcategoria(subcategoryId);
+  if (!subcategoria) {
+    throw new Error(`Subcategoria não encontrada: ${subcategoryId}`);
+  }
 
   await criarRecorrencia({
     descricao: String(dadosForm.get('descricao') ?? ''),
     valorCentavos: emCentavos(Number(dadosForm.get('valor') ?? 0)),
     diaDoMes: Number(dadosForm.get('diaDoMes')),
-    budgetCategoryId: String(dadosForm.get('budgetCategoryId') ?? ''),
-    subcategoryId: String(dadosForm.get('subcategoryId') ?? ''),
+    budgetCategoryId: subcategoria.budgetCategoryId,
+    subcategoryId,
     metodo,
     cardId: metodo === 'CREDITO' && cardIdBruto ? cardIdBruto : null,
     inicio: String(dadosForm.get('inicio') ?? ''),

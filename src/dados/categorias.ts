@@ -91,6 +91,16 @@ export async function criarSubcategoria(
   });
 }
 
+export async function buscarSubcategoria(
+  id: string,
+  cliente: ClientePrisma = prisma,
+): Promise<{ id: string; nome: string; budgetCategoryId: string } | null> {
+  return cliente.subcategory.findUnique({
+    where: { id },
+    select: { id: true, nome: true, budgetCategoryId: true },
+  });
+}
+
 export async function arquivarCategoria(
   id: string,
   cliente: ClientePrisma = prisma,

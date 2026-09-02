@@ -3,22 +3,8 @@ import Link from 'next/link';
 import { auth, signOut } from '@/auth';
 
 import { AvisoOffline } from './offline-aviso';
+import { DESTINOS_PRINCIPAIS, DESTINOS_SECUNDARIOS } from './destinos';
 import estilos from './navegacao.module.css';
-
-const DESTINOS_PRINCIPAIS = [
-  { href: '/', rotulo: 'Painel' },
-  { href: '/lancamentos', rotulo: 'Lançamentos' },
-  { href: '/areas', rotulo: 'Áreas' },
-  { href: '/fluxo', rotulo: 'Fluxo' },
-];
-
-const DESTINOS_SECUNDARIOS = [
-  { href: '/orcamentos', rotulo: 'Orçamentos' },
-  { href: '/reembolsos', rotulo: 'Reembolsos' },
-  { href: '/receitas', rotulo: 'Receitas' },
-  { href: '/cartoes', rotulo: 'Cartões' },
-  { href: '/ajustes', rotulo: 'Ajustes' },
-];
 
 export default async function LayoutApp({
   children,

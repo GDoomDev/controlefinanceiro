@@ -2,15 +2,8 @@ import Link from 'next/link';
 
 import { auth, signOut } from '@/auth';
 
+import { DESTINOS_SECUNDARIOS as DESTINOS_MAIS } from '../destinos';
 import estilos from './mais.module.css';
-
-const DESTINOS_MAIS = [
-  { href: '/orcamentos', rotulo: 'Orçamentos' },
-  { href: '/reembolsos', rotulo: 'Reembolsos' },
-  { href: '/receitas', rotulo: 'Receitas' },
-  { href: '/cartoes', rotulo: 'Cartões' },
-  { href: '/ajustes', rotulo: 'Ajustes' },
-];
 
 export default async function Mais() {
   const sessao = await auth();

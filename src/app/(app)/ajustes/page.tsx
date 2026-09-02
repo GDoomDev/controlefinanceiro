@@ -238,18 +238,6 @@ export default async function Ajustes() {
               />
             </div>
             <div className={estilos.campo}>
-              <label className={estilos.rotulo} htmlFor="rec-cat">
-                Orçamento
-              </label>
-              <select id="rec-cat" name="budgetCategoryId" className={estilos.entrada}>
-                {categorias.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nome}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className={estilos.campo}>
               <label className={estilos.rotulo} htmlFor="rec-sub">
                 Subcategoria
               </label>
