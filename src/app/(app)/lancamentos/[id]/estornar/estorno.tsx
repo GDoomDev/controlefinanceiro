@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 
 import type { AlvoDoEstorno } from '@/dados/estorno';
-import { formatarBRL } from '@/dominio/dinheiro';
+import { emCentavos, formatarBRL } from '@/dominio/dinheiro';
 import {
   type ModoCredito,
   planejarEstorno,
@@ -42,7 +42,7 @@ export function FormularioEstorno({
     [alvo.parcelas, modo, competencia],
   );
 
-  const valorParcial = Math.round(Number(valor || 0) * 100);
+  const valorParcial = emCentavos(Number(valor || 0));
 
   return (
     <form action={acaoEstornar}>
@@ -172,7 +172,8 @@ export function FormularioEstorno({
                 </b>{' '}
                 ({faixa(resumo.canceladas.competencias)}){' '}
                 {resumo.canceladas.quantidade > 1 ? 'são canceladas' : 'é cancelada'} —
-                libera<b> {formatarBRL(resumo.canceladas.valorCentavos)}</b> da
+                libera{resumo.canceladas.quantidade > 1 ? 'm' : ''}
+                <b> {formatarBRL(resumo.canceladas.valorCentavos)}</b> da
                 projeção
               </div>
             ) : null}
