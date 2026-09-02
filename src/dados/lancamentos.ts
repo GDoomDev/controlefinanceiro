@@ -155,7 +155,7 @@ export async function criarLancamento(
   // O `$transaction` só existe no PrismaClient de topo.
   const ids =
     '$transaction' in cliente
-      ? await cliente.$transaction((tx) => gravar(tx))
+      ? await cliente.$transaction((tx) => gravar(tx), { timeout: 15000 })
       : await gravar(cliente);
 
   return { ids };

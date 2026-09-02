@@ -162,7 +162,7 @@ export async function aplicarEstorno(
   // Mesmo padrão de `criarLancamento`: reaproveita a transação quando já
   // estamos dentro de uma. O `$transaction` só existe no cliente de topo.
   if ('$transaction' in cliente) {
-    await cliente.$transaction((tx) => gravar(tx));
+    await cliente.$transaction((tx) => gravar(tx), { timeout: 15000 });
   } else {
     await gravar(cliente);
   }
