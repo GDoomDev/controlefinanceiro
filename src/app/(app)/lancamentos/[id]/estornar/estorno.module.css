@@ -1,6 +1,6 @@
 .voltar {
-  font-size: 12.5px;
-  color: #6b7280;
+  font-size: var(--fonte-tamanho-corpo);
+  color: var(--cor-texto-secundario);
   text-decoration: none;
 }
 
@@ -9,16 +9,16 @@
 }
 
 .compra {
-  font-size: 19px;
+  font-size: var(--fonte-tamanho-destaque);
   font-weight: 680;
   letter-spacing: -0.4px;
-  margin: 10px 0 2px;
+  margin: 10px 0 var(--espaco-1);
 }
 
 .compraMeta {
-  font-size: 12.5px;
-  color: #6b7280;
-  margin-bottom: 20px;
+  font-size: var(--fonte-tamanho-corpo);
+  color: var(--cor-texto-secundario);
+  margin-bottom: var(--espaco-5);
 }
 
 .secao {
@@ -26,48 +26,48 @@
 }
 
 .rotulo {
-  font-size: 9.5px;
+  font-size: var(--fonte-tamanho-rotulo);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: #9ca3af;
+  color: var(--cor-texto-mudo);
   display: block;
-  margin-bottom: 5px;
+  margin-bottom: var(--espaco-1);
 }
 
 .chips {
   display: flex;
-  gap: 7px;
+  gap: var(--espaco-2);
   flex-wrap: wrap;
 }
 
 .chip {
-  border: 1px solid #d1d5db;
-  border-radius: 999px;
+  border: 1px solid var(--cor-borda-forte);
+  border-radius: var(--raio-pilula);
   padding: 6px 14px;
-  font-size: 12.5px;
-  background: #fff;
+  font-size: var(--fonte-tamanho-corpo);
+  background: var(--cor-fundo);
   cursor: pointer;
   font-family: inherit;
 }
 
 .chipAtivo {
-  background: #111827;
-  border-color: #111827;
-  color: #fff;
+  background: var(--cor-texto);
+  border-color: var(--cor-texto);
+  color: var(--cor-fundo);
 }
 
 .entrada {
-  border: 1px solid #d1d5db;
-  border-radius: 7px;
-  padding: 7px 10px;
-  font-size: 13px;
+  border: 1px solid var(--cor-borda-forte);
+  border-radius: var(--raio-controle);
+  padding: var(--espaco-2) 10px;
+  font-size: var(--fonte-tamanho-corpo);
   font-family: inherit;
   font-variant-numeric: tabular-nums;
 }
 
 .linha {
   display: flex;
-  gap: 12px;
+  gap: var(--espaco-3);
   flex-wrap: wrap;
   align-items: flex-end;
 }
@@ -75,26 +75,26 @@
 .campo {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: var(--espaco-1);
 }
 
 /* A prévia do spec 8.5: o efeito exato antes de confirmar. */
 .previa {
-  border: 1px solid #e5e7eb;
-  border-left: 3px solid #2a78d6;
-  border-radius: 8px;
-  background: #f9fafb;
-  padding: 12px 14px;
-  font-size: 13px;
+  border: 1px solid var(--cor-borda);
+  border-left: 3px solid var(--cor-destaque-texto);
+  border-radius: var(--raio-controle);
+  background: var(--cor-superficie);
+  padding: var(--espaco-3) 14px;
+  font-size: var(--fonte-tamanho-corpo);
   line-height: 1.65;
   margin-bottom: 18px;
 }
 
 .previaTitulo {
-  font-size: 9.5px;
+  font-size: var(--fonte-tamanho-rotulo);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: #9ca3af;
+  color: var(--cor-texto-mudo);
   margin-bottom: 6px;
 }
 
@@ -103,30 +103,30 @@
 }
 
 .creditadas {
-  color: #1e40af;
+  color: var(--cor-severidade-azul-texto);
 }
 
 .canceladas {
-  color: #b45309;
+  color: var(--cor-aviso-texto-forte);
 }
 
 .confirmar {
-  background: #b91c1c;
-  color: #fff;
+  background: var(--cor-perigo-texto-forte);
+  color: var(--cor-fundo);
   border: none;
-  border-radius: 8px;
-  padding: 9px 18px;
-  font-size: 13px;
+  border-radius: var(--raio-controle);
+  padding: var(--espaco-2) 18px;
+  font-size: var(--fonte-tamanho-corpo);
   cursor: pointer;
   font-family: inherit;
 }
 
 .confirmar:hover {
-  background: #991b1b;
+  background: var(--cor-severidade-vermelho-texto);
 }
 
 .aviso {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--cor-texto-secundario);
   margin-top: 10px;
 }
