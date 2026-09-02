@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-import { CORES } from '../cores';
+import { CORES } from '@/dominio/paleta';
 import estilos from './ajustes.module.css';
 
 export interface SlotOcupadoProp {
@@ -50,12 +50,9 @@ export function SeletorDeCor({ ocupados }: { ocupados: SlotOcupadoProp[] }) {
             />
           );
         })}
-        <button
-          type="button"
-          onClick={() => setEscolha('personalizada')}
+        <label
           className={`${estilos.swatchPersonalizada} ${escolha === 'personalizada' ? estilos.swatchAtivo : ''}`}
           title="Cor personalizada"
-          aria-label="Cor personalizada"
         >
           🎨
           <input
@@ -65,10 +62,11 @@ export function SeletorDeCor({ ocupados }: { ocupados: SlotOcupadoProp[] }) {
               setCorHex(e.target.value);
               setEscolha('personalizada');
             }}
+            onClick={() => setEscolha('personalizada')}
             className={estilos.seletorNativo}
-            aria-label="Escolher cor personalizada"
+            aria-label="Cor personalizada"
           />
-        </button>
+        </label>
       </div>
 
       {escolha === 'personalizada' ? (

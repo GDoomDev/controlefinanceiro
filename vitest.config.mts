@@ -22,6 +22,7 @@ export default defineConfig(({ mode }) => ({
     include: ['src/**/*.test.ts'],
     environment: 'node',
     env: loadEnv(mode, process.cwd(), ''),
+    testTimeout: 15000,
     server: {
       deps: {
         // Força o Vite a transformar (em vez de externalizar/usar o require

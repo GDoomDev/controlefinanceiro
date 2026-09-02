@@ -3,10 +3,10 @@ import Link from 'next/link';
 import { orcamentosDoMes } from '@/dados/orcamentos';
 import { competenciaDe, dataCivilEm, somarMeses } from '@/dominio/data';
 import { formatarBRL } from '@/dominio/dinheiro';
+import { corDaCategoria } from '@/dominio/paleta';
 
 import { acaoDefinirAlocacao, acaoRemoverAlocacao } from './acoes';
 import estilos from './orcamentos.module.css';
-import { corDaCategoria } from '@/dominio/paleta';
 
 export default async function Orcamentos({
   searchParams,

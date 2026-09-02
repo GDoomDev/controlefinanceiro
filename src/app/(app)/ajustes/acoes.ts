@@ -28,6 +28,10 @@ export async function acaoCriarCategoria(dadosForm: FormData): Promise<void> {
     corPersonalizada: corPersonalizadaBruta ? corPersonalizadaBruta : null,
   });
   revalidatePath('/ajustes');
+  revalidatePath('/');
+  revalidatePath('/areas');
+  revalidatePath('/orcamentos');
+  revalidatePath('/lancamentos/novo');
 }
 
 export async function acaoCriarSubcategoria(dadosForm: FormData): Promise<void> {

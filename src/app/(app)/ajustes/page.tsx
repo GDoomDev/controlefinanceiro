@@ -45,7 +45,7 @@ export default async function Ajustes() {
               placeholder="Alimentação"
             />
           </div>
-          <SeletorDeCor ocupados={ocupados} />
+          <SeletorDeCor key={ocupados.length} ocupados={ocupados} />
           <button type="submit" className={estilos.botao}>
             Criar orçamento
           </button>
