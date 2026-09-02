@@ -75,7 +75,7 @@
 .entrada {
   border: 1px solid var(--cor-borda-forte);
   border-radius: var(--raio-controle);
-  padding: 6px 9px;
+  padding: 6px var(--espaco-2);
   font-size: var(--fonte-tamanho-corpo);
   font-family: inherit;
   width: 110px;
