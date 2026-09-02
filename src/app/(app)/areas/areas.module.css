@@ -2,8 +2,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: var(--espaco-3);
+  margin-bottom: var(--espaco-4);
   flex-wrap: wrap;
 }
 
@@ -11,48 +11,48 @@
   display: flex;
   gap: 6px;
   align-items: center;
-  font-size: 13px;
+  font-size: var(--fonte-tamanho-corpo);
 }
 
 .mesLink {
-  color: #6b7280;
+  color: var(--cor-texto-secundario);
   text-decoration: none;
-  padding: 4px 8px;
-  border-radius: 6px;
+  padding: var(--espaco-1) var(--espaco-2);
+  border-radius: var(--raio-controle);
 }
 
 .mesLink:hover {
-  background: #f3f4f6;
+  background: var(--cor-superficie-sutil);
 }
 
 .mesAtual {
   font-weight: 600;
-  color: #111827;
+  color: var(--cor-texto);
 }
 
 .total {
-  font-size: 22px;
+  font-size: var(--fonte-tamanho-destaque);
   font-weight: 680;
   letter-spacing: -0.6px;
   font-variant-numeric: tabular-nums;
 }
 
 .totalRotulo {
-  font-size: 10px;
+  font-size: var(--fonte-tamanho-rotulo);
   text-transform: uppercase;
   letter-spacing: 0.6px;
-  color: #9ca3af;
+  color: var(--cor-texto-mudo);
 }
 
 /* Camada 1: barra 100% empilhada. O respiro de 2px entre segmentos vem do
    `gap`, não de margem, para que as larguras percentuais continuem exatas. */
 .barra {
   display: flex;
-  gap: 2px;
+  gap: var(--espaco-1);
   height: 34px;
-  border-radius: 8px;
+  border-radius: var(--raio-controle);
   overflow: hidden;
-  margin-bottom: 12px;
+  margin-bottom: var(--espaco-3);
 }
 
 .segmento {
@@ -60,8 +60,8 @@
   align-items: center;
   justify-content: center;
   min-width: 0;
-  color: #fff;
-  font-size: 11px;
+  color: var(--cor-fundo);
+  font-size: var(--fonte-tamanho-rotulo);
   font-weight: 600;
   text-decoration: none;
   overflow: hidden;
@@ -74,62 +74,62 @@
 }
 
 .segmentoAtivo {
-  outline: 2px solid #111827;
+  outline: 2px solid var(--cor-texto);
   outline-offset: -2px;
 }
 
 .legenda {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 16px;
-  margin-bottom: 8px;
+  gap: 6px var(--espaco-4);
+  margin-bottom: var(--espaco-2);
 }
 
 .legendaItem {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
-  color: #374151;
+  font-size: var(--fonte-tamanho-corpo);
+  color: var(--cor-texto-forte);
   text-decoration: none;
 }
 
 .legendaItem:hover {
-  color: #111827;
+  color: var(--cor-texto);
 }
 
 .ponto {
   width: 9px;
   height: 9px;
-  border-radius: 2px;
+  border-radius: var(--raio-fino);
   flex-shrink: 0;
 }
 
 .legendaValor {
   font-variant-numeric: tabular-nums;
-  color: #6b7280;
+  color: var(--cor-texto-secundario);
 }
 
 .creditados {
-  font-size: 12px;
-  color: #6b7280;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 8px 11px;
+  font-size: var(--fonte-tamanho-corpo);
+  color: var(--cor-texto-secundario);
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-controle);
+  padding: var(--espaco-2) var(--espaco-3);
   margin-bottom: 18px;
 }
 
 .filtro {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 12.5px;
-  margin-bottom: 12px;
+  gap: var(--espaco-2);
+  font-size: var(--fonte-tamanho-corpo);
+  margin-bottom: var(--espaco-3);
 }
 
 .limpar {
-  color: #2a78d6;
+  color: var(--cor-destaque-texto);
   text-decoration: none;
 }
 
@@ -138,16 +138,16 @@
 }
 
 .titulo {
-  font-size: 13px;
+  font-size: var(--fonte-tamanho-corpo);
   font-weight: 650;
-  margin: 22px 0 10px;
+  margin: var(--espaco-5) 0 10px;
 }
 
 /* Camada 2: ranking de subcategorias. */
 .linha {
   position: relative;
-  padding: 7px 0;
-  border-bottom: 1px solid #f3f4f6;
+  padding: var(--espaco-2) 0;
+  border-bottom: 1px solid var(--cor-superficie-sutil);
 }
 
 .linhaTopo {
@@ -155,17 +155,17 @@
   justify-content: space-between;
   align-items: baseline;
   gap: 10px;
-  font-size: 13px;
+  font-size: var(--fonte-tamanho-corpo);
 }
 
 .linhaNome {
   font-weight: 550;
-  color: #111827;
+  color: var(--cor-texto);
 }
 
 .linhaOrcamento {
-  font-size: 11px;
-  color: #9ca3af;
+  font-size: var(--fonte-tamanho-rotulo);
+  color: var(--cor-texto-mudo);
   margin-left: 6px;
 }
 
@@ -175,32 +175,32 @@
 }
 
 .linhaPercentual {
-  font-size: 11px;
-  color: #6b7280;
+  font-size: var(--fonte-tamanho-rotulo);
+  color: var(--cor-texto-secundario);
   margin-left: 6px;
 }
 
 .linhaTrilha {
   height: 7px;
-  border-radius: 4px;
-  background: #f3f4f6;
-  margin-top: 5px;
+  border-radius: var(--raio-fino);
+  background: var(--cor-superficie-sutil);
+  margin-top: var(--espaco-1);
   overflow: hidden;
 }
 
 .linhaPreenchimento {
   height: 100%;
-  border-radius: 4px;
+  border-radius: var(--raio-fino);
 }
 
 /* Detalhe do spec 8.2: aparece no hover ou no foco (teclado). No celular,
    onde não existe hover, ele fica sempre visível — ver a media query. */
 .detalhe {
   display: none;
-  font-size: 11px;
-  color: #6b7280;
-  margin-top: 5px;
-  gap: 12px;
+  font-size: var(--fonte-tamanho-rotulo);
+  color: var(--cor-texto-secundario);
+  margin-top: var(--espaco-1);
+  gap: var(--espaco-3);
   flex-wrap: wrap;
 }
 
@@ -210,18 +210,18 @@
 }
 
 .outras {
-  padding: 9px 0;
-  font-size: 12.5px;
-  color: #9ca3af;
+  padding: var(--espaco-2) 0;
+  font-size: var(--fonte-tamanho-corpo);
+  color: var(--cor-texto-mudo);
 }
 
 .vazio {
-  border: 1px dashed #d1d5db;
-  border-radius: 10px;
-  padding: 22px;
+  border: 1px dashed var(--cor-borda-forte);
+  border-radius: var(--raio-card);
+  padding: var(--espaco-5);
   text-align: center;
-  color: #6b7280;
-  font-size: 13px;
+  color: var(--cor-texto-secundario);
+  font-size: var(--fonte-tamanho-corpo);
 }
 
 @media (max-width: 720px) {
