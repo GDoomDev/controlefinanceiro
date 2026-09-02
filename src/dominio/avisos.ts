@@ -97,7 +97,7 @@ export function gerarAvisos(entrada: EntradaAvisos): Aviso[] {
     avisos.push({
       severidade: 'AZUL',
       texto: `${formatarBRL(r.totalCentavos)} em reembolsos pendentes, o mais antigo há ${r.diasDoMaisAntigo} dias`,
-      href: '/lancamentos',
+      href: '/reembolsos',
       valorOrdenacao: r.totalCentavos,
     });
   }
