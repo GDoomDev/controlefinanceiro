@@ -7,6 +7,7 @@ import {
 import type { MetodoPagamento } from '@/dominio/lancamento';
 import { vigenteNoMes } from '@/dominio/recorrencia';
 
+import { buscarCartao } from './cartoes';
 import { garantirFatura } from './faturas';
 import { prisma } from './prisma';
 import type { ClientePrisma } from './tipos';
@@ -40,9 +41,10 @@ export interface RecorrenciaListada {
 }
 
 function validarCompetencia(c: Competencia): void {
-  if (!/^\d{4}-\d{2}$/.test(c)) {
-    throw new Error(`Competência inválida, esperado "YYYY-MM": ${c}`);
-  }
+  // Delega para partesDaCompetencia — que também valida o mês real (1..12),
+  // não só o formato "YYYY-MM". Uma regex local e mais fraca deixaria passar
+  // uma competência como "2099-13".
+  partesDaCompetencia(c);
 }
 
 export async function criarRecorrencia(
@@ -79,8 +81,14 @@ export async function criarRecorrencia(
     );
   }
 
-  if (entrada.metodo === 'CREDITO' && !entrada.cardId) {
-    throw new Error('Despesa fixa no crédito exige um cartão');
+  if (entrada.metodo === 'CREDITO') {
+    if (!entrada.cardId) {
+      throw new Error('Despesa fixa no crédito exige um cartão');
+    }
+    const cartao = await buscarCartao(entrada.cardId, cliente);
+    if (!cartao) {
+      throw new Error(`Cartão não encontrado: ${entrada.cardId}`);
+    }
   }
 
   return cliente.recurringExpense.create({
@@ -211,32 +219,56 @@ export async function materializarRecorrentes(
 
   const { ano, mes } = partesDaCompetencia(competencia);
 
-  const linhas = await Promise.all(
-    vigentes.map(async (r) => {
-      const dia = diaSeguro(r.diaDoMes, ano, mes);
-      const invoiceId =
-        r.metodo === 'CREDITO' && r.cardId
-          ? (await garantirFatura(r.cardId, competencia, cliente)).id
-          : null;
+  // Sequencial, não `Promise.all`: `garantirFatura` é um check-then-create
+  // sem upsert/lock, protegido só pela constraint única do banco em
+  // (cardId, competencia). Duas recorrências CREDITO no mesmo cartão no
+  // mesmo mês, disparadas em paralelo, veriam "sem fatura" ao mesmo tempo e a
+  // segunda `invoice.create` rejeitaria por violação de unicidade — o que
+  // derrubaria a chamada inteira via `Promise.all`, não só aquele par. Um
+  // laço sequencial (mesmo padrão de `criarLancamento` em lancamentos.ts)
+  // garante que a segunda chamada de `garantirFatura` já encontre a fatura
+  // criada pela primeira.
+  const linhas: Array<{
+    tipo: 'DESPESA';
+    descricao: string;
+    valorCentavos: number;
+    data: string;
+    metodo: MetodoPagamento;
+    cardId: string | null;
+    invoiceId: string | null;
+    budgetCategoryId: string;
+    subcategoryId: string;
+    competencia: Competencia;
+    reembolsoAlvoCentavos: number;
+    parcelaNum: number;
+    parcelaTotal: number;
+    recorrenciaId: string;
+  }> = [];
 
-      return {
-        tipo: 'DESPESA' as const,
-        descricao: r.descricao,
-        valorCentavos: r.valorCentavos,
-        data: formatarDataCivil({ ano, mes, dia }),
-        metodo: r.metodo,
-        cardId: r.metodo === 'CREDITO' ? r.cardId : null,
-        invoiceId,
-        budgetCategoryId: r.budgetCategoryId,
-        subcategoryId: r.subcategoryId,
-        competencia,
-        reembolsoAlvoCentavos: 0,
-        parcelaNum: 1,
-        parcelaTotal: 1,
-        recorrenciaId: r.id,
-      };
-    }),
-  );
+  for (const r of vigentes) {
+    const dia = diaSeguro(r.diaDoMes, ano, mes);
+    const invoiceId =
+      r.metodo === 'CREDITO' && r.cardId
+        ? (await garantirFatura(r.cardId, competencia, cliente)).id
+        : null;
+
+    linhas.push({
+      tipo: 'DESPESA',
+      descricao: r.descricao,
+      valorCentavos: r.valorCentavos,
+      data: formatarDataCivil({ ano, mes, dia }),
+      metodo: r.metodo,
+      cardId: r.metodo === 'CREDITO' ? r.cardId : null,
+      invoiceId,
+      budgetCategoryId: r.budgetCategoryId,
+      subcategoryId: r.subcategoryId,
+      competencia,
+      reembolsoAlvoCentavos: 0,
+      parcelaNum: 1,
+      parcelaTotal: 1,
+      recorrenciaId: r.id,
+    });
+  }
 
   const resultado = await cliente.transaction.createMany({
     data: linhas,

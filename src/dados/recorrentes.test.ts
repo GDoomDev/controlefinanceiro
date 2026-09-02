@@ -217,6 +217,50 @@ describe('criarRecorrencia', () => {
       ).rejects.toThrow('Competência inválida');
     });
   });
+
+  it('rejeita competência de início com mês inexistente', async () => {
+    await comRollback(async (tx) => {
+      const { categoria, sub } = await cenario(tx);
+
+      await expect(
+        criarRecorrencia(
+          {
+            descricao: 'Teste',
+            valorCentavos: 1000,
+            diaDoMes: 5,
+            budgetCategoryId: categoria.id,
+            subcategoryId: sub.id,
+            metodo: 'PIX',
+            cardId: null,
+            inicio: '2099-13',
+          },
+          tx,
+        ),
+      ).rejects.toThrow('mês inválido');
+    });
+  });
+
+  it('rejeita crédito com cartão inexistente', async () => {
+    await comRollback(async (tx) => {
+      const { categoria, sub } = await cenario(tx);
+
+      await expect(
+        criarRecorrencia(
+          {
+            descricao: 'Teste',
+            valorCentavos: 1000,
+            diaDoMes: 5,
+            budgetCategoryId: categoria.id,
+            subcategoryId: sub.id,
+            metodo: 'CREDITO',
+            cardId: 'nao-existe',
+            inicio: '2099-01',
+          },
+          tx,
+        ),
+      ).rejects.toThrow('Cartão não encontrado');
+    });
+  });
 });
 
 describe('encerrarRecorrencia / pausarRecorrencia / retomarRecorrencia', () => {
@@ -264,6 +308,27 @@ describe('encerrarRecorrencia / pausarRecorrencia / retomarRecorrencia', () => {
       await expect(encerrarRecorrencia(id, '2099-01', tx)).rejects.toThrow(
         'não pode ser anterior ao início',
       );
+    });
+  });
+
+  it('rejeita fim com mês inexistente', async () => {
+    await comRollback(async (tx) => {
+      const { categoria, sub } = await cenario(tx);
+      const { id } = await criarRecorrencia(
+        {
+          descricao: 'Teste',
+          valorCentavos: 1000,
+          diaDoMes: 5,
+          budgetCategoryId: categoria.id,
+          subcategoryId: sub.id,
+          metodo: 'PIX',
+          cardId: null,
+          inicio: '2099-01',
+        },
+        tx,
+      );
+
+      await expect(encerrarRecorrencia(id, '2099-13', tx)).rejects.toThrow('mês inválido');
     });
   });
 
@@ -530,9 +595,65 @@ describe('materializarRecorrentes', () => {
     });
   });
 
+  it('materializa duas recorrências CREDITO no mesmo cartão sem colidir na criação da fatura', async () => {
+    await comRollback(async (tx) => {
+      const { categoria, sub } = await cenario(tx);
+      const cartao = await criarCartao(
+        { nome: 'Cartão das fixas', diaFechamento: 10, diaVencimento: 20 },
+        tx,
+      );
+      await criarRecorrencia(
+        {
+          descricao: 'Netflix',
+          valorCentavos: 2990,
+          diaDoMes: 5,
+          budgetCategoryId: categoria.id,
+          subcategoryId: sub.id,
+          metodo: 'CREDITO',
+          cardId: cartao.id,
+          inicio: '2099-01',
+        },
+        tx,
+      );
+      await criarRecorrencia(
+        {
+          descricao: 'Spotify',
+          valorCentavos: 1990,
+          diaDoMes: 8,
+          budgetCategoryId: categoria.id,
+          subcategoryId: sub.id,
+          metodo: 'CREDITO',
+          cardId: cartao.id,
+          inicio: '2099-01',
+        },
+        tx,
+      );
+
+      const resultado = await materializarRecorrentes('2099-03', tx);
+      expect(resultado.criadas).toBe(2);
+
+      const linhas = await tx.transaction.findMany({
+        where: { competencia: '2099-03', cardId: cartao.id },
+        select: { invoiceId: true },
+      });
+      expect(linhas).toHaveLength(2);
+      expect(linhas[0]!.invoiceId).not.toBeNull();
+      expect(linhas[0]!.invoiceId).toBe(linhas[1]!.invoiceId);
+
+      const faturas = await tx.invoice.findMany({
+        where: { cardId: cartao.id, competencia: '2099-03' },
+      });
+      expect(faturas).toHaveLength(1);
+    });
+  });
+
   it('rejeita competência em formato inválido', async () => {
     await expect(materializarRecorrentes('2099/03')).rejects.toThrow(
       'Competência inválida',
     );
+  });
+
+  it('rejeita competência com mês inexistente mesmo sem nenhuma recorrência vigente', async () => {
+    await expect(materializarRecorrentes('2099-13')).rejects.toThrow('mês inválido');
   });
 });
