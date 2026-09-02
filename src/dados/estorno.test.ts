@@ -1,10 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { criarCartao } from './cartoes';
 import { criarCategoria, criarSubcategoria } from './categorias';
 import { alvoDoEstorno, aplicarEstorno, aplicarEstornoParcial } from './estorno';
 import { fecharFatura, totalDaFatura } from './faturas';
 import { criarLancamento } from './lancamentos';
+import { prisma } from './prisma';
 import { comRollback } from './rollback';
 import type { ClientePrisma } from './tipos';
 
@@ -294,6 +295,148 @@ describe('aplicarEstorno', () => {
         ),
       ).rejects.toThrow('Competência inválida');
     });
+  });
+});
+
+describe('aplicarEstorno — atomicidade sob falha', () => {
+  it('nada sobrevive se uma falhar no meio da criação dos créditos', async () => {
+    // Diferente dos demais testes deste arquivo, este NÃO usa `comRollback`.
+    //
+    // `comRollback` passa para `aplicarEstorno` um `tx` que já é, ele
+    // próprio, um cliente de transação (`Prisma.TransactionClient`). Como
+    // esse tipo não tem `$transaction`, `aplicarEstorno` sempre cai no ramo
+    // `gravar(cliente)` — nunca no ramo `cliente.$transaction(...)`, que é
+    // exatamente o que a docstring da função promete ("tudo ou nada", spec
+    // seção 13). Um teste que passasse um `tx` de fora não seria capaz de
+    // distinguir a versão real (transacional) de uma versão quebrada que
+    // chamasse `gravar(cliente)` sem transação nenhuma — os dois casos se
+    // comportariam de forma idêntica, porque o `tx` de fora nunca teria
+    // `$transaction` de qualquer forma.
+    //
+    // Por isso este teste chama `aplicarEstorno` sem passar `cliente` (usando
+    // o padrão, o `prisma` de topo), forçando o ramo
+    // `cliente.$transaction((tx) => gravar(tx))` de verdade. Para injetar uma
+    // falha na 2ª de 3 criações de crédito sem poder capturar o `tx` interno
+    // do Prisma antes de ele existir (ele só é criado quando `$transaction` é
+    // chamado), espionamos `prisma.$transaction` e, na nossa implementação,
+    // delegamos para a implementação original — só que envolvendo o `tx` que
+    // o Prisma nos entrega com uma versão de `credito.create` que deixa a
+    // primeira chamada passar de verdade (chamando a implementação real) e
+    // derruba a segunda com um erro proposital. As duas parcelas ainda não
+    // cobradas (que a mesma transação cancela ANTES do loop de créditos)
+    // também precisam sobreviver ilesas — é a prova de que o cancelamento e
+    // os créditos vivem ou morrem juntos.
+    const nomeCartao = 'Cartão — teste de atomicidade do estorno';
+    const nomeCategoria = 'Categoria — teste de atomicidade do estorno';
+    const descricaoCompra = 'TV com falha proposital no meio dos créditos do estorno';
+
+    // Limpeza defensiva: caso uma execução anterior tenha sido interrompida
+    // antes do `finally`, isso evita colidir com os nomes únicos usados
+    // aqui (a tabela real do Postgres não tem o rollback automático dos
+    // outros testes).
+    await prisma.transaction.deleteMany({ where: { descricao: descricaoCompra } });
+    await prisma.card.deleteMany({ where: { nome: nomeCartao } });
+    await prisma.budgetCategory.deleteMany({ where: { nome: nomeCategoria } });
+
+    const categoria = await criarCategoria({ nome: nomeCategoria, corSlot: 4 }, prisma);
+    const subcategoria = await criarSubcategoria(
+      { budgetCategoryId: categoria.id, nome: 'Sub' },
+      prisma,
+    );
+    const cartao = await criarCartao(
+      { nome: nomeCartao, diaFechamento: 25, diaVencimento: 5 },
+      prisma,
+    );
+
+    const { ids } = await criarLancamento(
+      {
+        descricao: descricaoCompra,
+        valorCentavos: 500000,
+        data: '2026-08-20',
+        metodo: 'CREDITO',
+        cardId: cartao.id,
+        budgetCategoryId: categoria.id,
+        subcategoryId: subcategoria.id,
+        parcelas: 5,
+        reembolsoAlvoCentavos: 0,
+      },
+      prisma,
+    );
+
+    // Fecha as faturas das 3 primeiras parcelas — viram crédito. As 2
+    // últimas ficam ABERTA — viram cancelamento. Assim o plano tem as duas
+    // metades (cancelamentos e créditos) e ao menos 2 créditos, para que a
+    // falha proposital no 2º ainda deixe o 1º já gravado de verdade caso a
+    // atomicidade esteja quebrada.
+    for (const id of [ids[0], ids[1], ids[2]]) {
+      const t = await prisma.transaction.findUniqueOrThrow({
+        where: { id },
+        select: { invoiceId: true },
+      });
+      await fecharFatura(t.invoiceId!, prisma);
+    }
+
+    const transactionOriginal = prisma.$transaction.bind(prisma);
+    const espiao = vi
+      .spyOn(prisma, '$transaction')
+      .mockImplementation(((fnOuArray: unknown, opcoes?: unknown) => {
+        if (typeof fnOuArray !== 'function') {
+          return transactionOriginal(fnOuArray as never, opcoes as never);
+        }
+        return transactionOriginal(async (tx) => {
+          let chamadas = 0;
+          const criarOriginal = tx.credito.create.bind(tx.credito);
+          const txComFalha = {
+            ...tx,
+            credito: {
+              ...tx.credito,
+              create: (...args: Parameters<typeof criarOriginal>) => {
+                chamadas += 1;
+                if (chamadas === 2) {
+                  throw new Error('falha proposital no meio dos créditos do estorno');
+                }
+                return criarOriginal(...args);
+              },
+            },
+          };
+          return (fnOuArray as (tx: ClientePrisma) => Promise<unknown>)(
+            txComFalha as unknown as ClientePrisma,
+          );
+        }, opcoes as never);
+      }) as typeof prisma.$transaction);
+
+    try {
+      await expect(
+        aplicarEstorno({
+          transactionId: ids[0],
+          modo: 'UNICO',
+          competenciaCredito: '2026-09',
+          recebidoEm: '2026-09-01',
+        }),
+      ).rejects.toThrow('falha proposital no meio dos créditos do estorno');
+
+      // Nada sobreviveu: nem os cancelamentos das 2 parcelas ainda não
+      // cobradas, nem o crédito da 1ª parcela fechada (que a espiã criou de
+      // verdade antes de falhar na 2ª).
+      const linhas = await prisma.transaction.findMany({
+        where: { id: { in: ids } },
+        select: { status: true },
+      });
+      expect(linhas.every((l) => l.status === 'ATIVA')).toBe(true);
+
+      const creditos = await prisma.credito.findMany({
+        where: { transactionId: { in: ids } },
+      });
+      expect(creditos).toHaveLength(0);
+    } finally {
+      espiao.mockRestore();
+      await prisma.credito.deleteMany({ where: { transactionId: { in: ids } } });
+      await prisma.transaction.deleteMany({ where: { descricao: descricaoCompra } });
+      await prisma.invoice.deleteMany({ where: { cardId: cartao.id } });
+      await prisma.card.delete({ where: { id: cartao.id } });
+      await prisma.subcategory.delete({ where: { id: subcategoria.id } });
+      await prisma.budgetCategory.delete({ where: { id: categoria.id } });
+    }
   });
 });
 
