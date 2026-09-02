@@ -5,8 +5,12 @@ import {
   faturaDaCompetencia,
   faturaDaCompra,
   faturasDasParcelas,
+  janelaDeFaturas,
+  MESES_DE_FATURA_PARA_TRAS,
+  MESES_DE_FATURA_PARA_FRENTE,
   totalFatura,
 } from './fatura';
+import { somarMeses } from './data';
 
 // Cartão do exemplo do spec: fecha 25, vence 5 (vencimento no mês seguinte).
 const FECHA_25_VENCE_5 = { diaFechamento: 25, diaVencimento: 5 };
@@ -162,5 +166,87 @@ describe('totalFatura', () => {
       { ativa: false, valorCentavos: 99999 },
     ];
     expect(totalFatura(transacoes, [])).toBe(10000);
+  });
+});
+
+describe('janelaDeFaturas', () => {
+  const fatura = (competencia: string) => ({ competencia });
+
+  it('mantém as faturas dentro da janela e conta as de fora', () => {
+    const todas = [
+      fatura('2025-12'), // 9 meses atrás — fora
+      fatura('2026-06'), // 3 meses atrás — dentro (borda)
+      fatura('2026-09'), // mês corrente — dentro
+      fatura('2027-03'), // 6 meses à frente — dentro (borda)
+      fatura('2027-04'), // 7 meses à frente — fora
+    ];
+
+    const { visiveis, ocultas } = janelaDeFaturas(todas, '2026-09');
+
+    expect(visiveis.map((f) => f.competencia)).toEqual([
+      '2026-06',
+      '2026-09',
+      '2027-03',
+    ]);
+    expect(ocultas).toBe(2);
+  });
+
+  it('inclui exatamente as bordas da janela', () => {
+    const tras = somarMeses('2026-09', -MESES_DE_FATURA_PARA_TRAS);
+    const frente = somarMeses('2026-09', MESES_DE_FATURA_PARA_FRENTE);
+
+    const { visiveis } = janelaDeFaturas(
+      [fatura(tras), fatura(frente)],
+      '2026-09',
+    );
+
+    expect(visiveis).toHaveLength(2);
+  });
+
+  it('exclui o mês imediatamente fora de cada borda', () => {
+    const antes = somarMeses('2026-09', -MESES_DE_FATURA_PARA_TRAS - 1);
+    const depois = somarMeses('2026-09', MESES_DE_FATURA_PARA_FRENTE + 1);
+
+    const { visiveis, ocultas } = janelaDeFaturas(
+      [fatura(antes), fatura(depois)],
+      '2026-09',
+    );
+
+    expect(visiveis).toEqual([]);
+    expect(ocultas).toBe(2);
+  });
+
+  it('atravessa a virada de ano', () => {
+    const { visiveis } = janelaDeFaturas(
+      [fatura('2025-11'), fatura('2026-01'), fatura('2026-07')],
+      '2026-01',
+    );
+
+    // Janela de 2025-10 a 2026-07: as três entram.
+    expect(visiveis).toHaveLength(3);
+  });
+
+  it('lista vazia devolve vazio, sem ocultas', () => {
+    expect(janelaDeFaturas([], '2026-09')).toEqual({ visiveis: [], ocultas: 0 });
+  });
+
+  it('preserva a ordem recebida', () => {
+    const { visiveis } = janelaDeFaturas(
+      [fatura('2026-10'), fatura('2026-08'), fatura('2026-09')],
+      '2026-09',
+    );
+
+    expect(visiveis.map((f) => f.competencia)).toEqual([
+      '2026-10',
+      '2026-08',
+      '2026-09',
+    ]);
+  });
+
+  it('não modifica o array recebido', () => {
+    const entrada = [fatura('2020-01'), fatura('2026-09')];
+    janelaDeFaturas(entrada, '2026-09');
+
+    expect(entrada).toHaveLength(2);
   });
 });

@@ -121,3 +121,30 @@ export function totalFatura(
 
   return somaTransacoes - somaEstornos;
 }
+
+/**
+ * A janela que `/cartoes` mostra por padrão. Mais espaço para a frente do que
+ * para trás porque é para a frente que o parcelamento empurra faturas: uma
+ * compra em 18x cria dezoito competências futuras de uma vez.
+ */
+export const MESES_DE_FATURA_PARA_TRAS = 3;
+export const MESES_DE_FATURA_PARA_FRENTE = 6;
+
+/**
+ * Separa as faturas visíveis das que ficam de fora da janela. Preserva a
+ * ordem recebida e não modifica o array de entrada.
+ */
+export function janelaDeFaturas<T extends { competencia: Competencia }>(
+  faturas: T[],
+  mesCorrente: Competencia,
+): { visiveis: T[]; ocultas: number } {
+  const inicio = somarMeses(mesCorrente, -MESES_DE_FATURA_PARA_TRAS);
+  const fim = somarMeses(mesCorrente, MESES_DE_FATURA_PARA_FRENTE);
+
+  // "YYYY-MM" compara lexicograficamente na mesma ordem que cronologicamente.
+  const visiveis = faturas.filter(
+    (f) => f.competencia >= inicio && f.competencia <= fim,
+  );
+
+  return { visiveis, ocultas: faturas.length - visiveis.length };
+}
