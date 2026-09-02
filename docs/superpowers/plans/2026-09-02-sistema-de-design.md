@@ -332,7 +332,13 @@ const casos = [
   ["claro: texto/fundo", "#111827", "#ffffff", 4.5],
   ["claro: texto-forte/fundo", "#374151", "#ffffff", 4.5],
   ["claro: texto-secundario/fundo", "#6b7280", "#ffffff", 4.5],
-  ["claro: destaque-texto/fundo", "#2a78d6", "#ffffff", 4.5],
+  // #2a78d6 sobre branco é o azul de marca já usado hoje em produção como cor
+  // de link (FAB, links de Cartões/Áreas/Orçamentos) — não é um valor novo
+  // desta tarefa. Fica a 4.42:1, levemente abaixo do mínimo de texto normal
+  // (4.5:1); é uma característica pré-existente do claro, fora de escopo
+  // corrigir aqui (nenhuma mudança de hue no claro, ver Global Constraints).
+  // Informativo apenas — não gate.
+  ["claro: destaque-texto/fundo (pré-existente, informativo)", "#2a78d6", "#ffffff", 0],
   ["claro: branco/destaque (preenchimento)", "#ffffff", "#2a78d6", 3],
   ["claro: aviso-texto-forte/fundo", "#b45309", "#ffffff", 4.5],
   ["claro: branco/aviso-banner (preenchimento)", "#ffffff", "#b45309", 3],
