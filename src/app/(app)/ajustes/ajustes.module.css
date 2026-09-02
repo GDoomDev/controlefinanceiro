@@ -52,7 +52,7 @@
 }
 
 .item {
-  padding: 10px 13px;
+  padding: 10px var(--espaco-3);
   font-size: var(--fonte-tamanho-corpo);
   display: flex;
   align-items: center;
@@ -75,9 +75,8 @@
   font-size: 12px;
 }
 
-
 .vazio {
-  padding: 14px;
+  padding: var(--espaco-4);
   font-size: var(--fonte-tamanho-corpo);
   color: var(--cor-texto-mudo);
 }
@@ -204,7 +203,7 @@
 }
 
 .dialogoAviso {
-  font-size: 12.5px;
+  font-size: var(--fonte-tamanho-corpo);
   color: var(--cor-texto-secundario);
   margin: var(--espaco-2) 0 var(--espaco-4);
 }
