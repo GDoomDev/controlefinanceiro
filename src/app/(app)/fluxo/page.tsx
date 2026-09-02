@@ -8,9 +8,9 @@ import { alturaDaColuna } from '@/dominio/fluxo';
 import estilos from './fluxo.module.css';
 
 /** Paleta divergente do spec, seção 8.3. O meio é neutro, nunca um matiz. */
-const AZUL = '#2a78d6';
-const VERMELHO = '#dc2626';
-const NEUTRO = '#d1d5db';
+const AZUL = 'var(--cor-destaque)';
+const VERMELHO = 'var(--cor-status-perigo)';
+const NEUTRO = 'var(--cor-borda-forte)';
 
 function corDaSobra(valor: number): string {
   if (valor > 0) return AZUL;
