@@ -20,10 +20,13 @@ export async function comRollback(
   corpo: (tx: ClientePrisma) => Promise<void>,
 ): Promise<void> {
   try {
-    await prisma.$transaction(async (tx) => {
-      await corpo(tx);
-      throw new Rollback();
-    });
+    await prisma.$transaction(
+      async (tx) => {
+        await corpo(tx);
+        throw new Rollback();
+      },
+      { timeout: 15000 },
+    );
   } catch (erro) {
     if (erro instanceof Rollback) return;
     throw erro;
