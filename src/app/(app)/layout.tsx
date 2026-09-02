@@ -4,12 +4,15 @@ import { auth, signOut } from '@/auth';
 
 import estilos from './navegacao.module.css';
 
-const DESTINOS = [
+const DESTINOS_PRINCIPAIS = [
   { href: '/', rotulo: 'Painel' },
-  { href: '/orcamentos', rotulo: 'Orçamentos' },
   { href: '/lancamentos', rotulo: 'Lançamentos' },
   { href: '/areas', rotulo: 'Áreas' },
   { href: '/fluxo', rotulo: 'Fluxo' },
+];
+
+const DESTINOS_SECUNDARIOS = [
+  { href: '/orcamentos', rotulo: 'Orçamentos' },
   { href: '/reembolsos', rotulo: 'Reembolsos' },
   { href: '/receitas', rotulo: 'Receitas' },
   { href: '/cartoes', rotulo: 'Cartões' },
@@ -27,11 +30,23 @@ export default async function LayoutApp({
     <div className={estilos.casca}>
       <nav className={estilos.lateral}>
         <div className={estilos.marca}>Controle Financeiro</div>
-        {DESTINOS.map((d) => (
+        {DESTINOS_PRINCIPAIS.map((d) => (
           <Link key={d.href} href={d.href} className={estilos.link}>
             {d.rotulo}
           </Link>
         ))}
+        {DESTINOS_SECUNDARIOS.map((d) => (
+          <Link
+            key={d.href}
+            href={d.href}
+            className={`${estilos.link} ${estilos.destinoSecundario}`}
+          >
+            {d.rotulo}
+          </Link>
+        ))}
+        <Link href="/mais" className={`${estilos.link} ${estilos.linkMais}`}>
+          Mais
+        </Link>
         <div className={estilos.rodape}>
           <div>{sessao?.user?.email}</div>
           <form
@@ -46,6 +61,12 @@ export default async function LayoutApp({
           </form>
         </div>
       </nav>
+
+      {/* Sempre acessível, em qualquer tela (spec, seção 8). */}
+      <Link href="/lancamentos/novo" className={estilos.fab} aria-label="Novo lançamento">
+        +
+      </Link>
+
       <main className={estilos.conteudo}>{children}</main>
     </div>
   );
