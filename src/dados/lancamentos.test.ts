@@ -276,7 +276,17 @@ describe('criarLancamento — atomicidade sob falha', () => {
     await prisma.card.deleteMany({ where: { nome: nomeCartao } });
     await prisma.budgetCategory.deleteMany({ where: { nome: nomeCategoria } });
 
-    const categoria = await criarCategoria({ nome: nomeCategoria, corSlot: 3 }, prisma);
+    // Cor personalizada em vez de slot: este teste chama `criarCategoria`
+    // com o `prisma` de topo, fora de `comRollback` (de propósito — ver
+    // comentário acima), então a categoria fica brevemente real no banco.
+    // Um slot fixo colidiria com a checagem de unicidade de qualquer outro
+    // teste rodando `comRollback` em paralelo (Vitest roda arquivos em
+    // paralelo); uma cor personalizada nunca ocupa slot, então não pode
+    // colidir com nada.
+    const categoria = await criarCategoria(
+      { nome: nomeCategoria, corSlot: null, corPersonalizada: '#654321' },
+      prisma,
+    );
     const subcategoria = await criarSubcategoria(
       { budgetCategoryId: categoria.id, nome: 'Sub' },
       prisma,
