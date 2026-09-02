@@ -10,7 +10,7 @@ export default function ErroApp({
   return (
     <div style={{ padding: 'var(--espaco-6)' }}>
       <h1>Algo deu errado</h1>
-      <p style={{ color: 'var(--cor-texto-secundario)', fontSize: 14, marginBottom: 16 }}>
+      <p style={{ color: 'var(--cor-texto-secundario)', fontSize: 14, marginBottom: 'var(--espaco-4)' }}>
         {error.message || 'Ocorreu um erro inesperado.'}
       </p>
       <button
