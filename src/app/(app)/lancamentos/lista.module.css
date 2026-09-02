@@ -15,24 +15,24 @@
 }
 
 .mesLink {
-  color: #6b7280;
+  color: var(--cor-texto-secundario);
   text-decoration: none;
   padding: 4px 8px;
   border-radius: 6px;
 }
 
 .mesLink:hover {
-  background: #f3f4f6;
+  background: var(--cor-superficie-sutil);
 }
 
 .mesAtual {
   font-weight: 600;
-  color: #111827;
+  color: var(--cor-texto);
 }
 
 .novo {
-  background: #111827;
-  color: #fff;
+  background: var(--cor-texto);
+  color: var(--cor-fundo);
   border-radius: 8px;
   padding: 8px 14px;
   font-size: 13px;
@@ -50,15 +50,15 @@
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: #9ca3af;
+  color: var(--cor-texto-mudo);
   font-weight: 500;
   padding: 0 8px 8px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--cor-borda);
 }
 
 .tabela td {
   padding: 9px 8px;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--cor-superficie-sutil);
 }
 
 .valor {
@@ -68,7 +68,7 @@
 }
 
 .meta {
-  color: #9ca3af;
+  color: var(--cor-texto-mudo);
   font-size: 11.5px;
 }
 
@@ -81,14 +81,14 @@
 .vazio {
   padding: 28px 14px;
   text-align: center;
-  color: #9ca3af;
+  color: var(--cor-texto-mudo);
   font-size: 13px;
 }
 
 .apagar {
   background: none;
   border: none;
-  color: #dc2626;
+  color: var(--cor-status-perigo);
   font-size: 11px;
   cursor: pointer;
   padding: 2px 6px;

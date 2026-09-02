@@ -13,11 +13,11 @@
 
 .rotulo {
   font-size: 11px;
-  color: #6b7280;
+  color: var(--cor-texto-secundario);
 }
 
 .entrada {
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--cor-borda-forte);
   border-radius: 7px;
   padding: 8px 10px;
   font-size: 14px;
@@ -41,8 +41,8 @@
 }
 
 .chip {
-  border: 1px solid #d1d5db;
-  background: #fff;
+  border: 1px solid var(--cor-borda-forte);
+  background: var(--cor-fundo);
   border-radius: 999px;
   padding: 6px 13px;
   font-size: 12px;
@@ -51,9 +51,9 @@
 }
 
 .chipAtivo {
-  background: #111827;
-  color: #fff;
-  border-color: #111827;
+  background: var(--cor-texto);
+  color: var(--cor-fundo);
+  border-color: var(--cor-texto);
 }
 
 .linhaCheck {
@@ -64,31 +64,31 @@
 }
 
 .rodape {
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
   border-radius: 9px;
   padding: 12px 14px;
   font-size: 12.5px;
   line-height: 1.6;
-  color: #374151;
+  color: var(--cor-texto-forte);
 }
 
 .rodapeVazio {
-  color: #9ca3af;
+  color: var(--cor-texto-mudo);
 }
 
 .erro {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
+  background: var(--cor-severidade-vermelho-fundo);
+  border: 1px solid var(--cor-severidade-vermelho-borda);
   border-radius: 9px;
   padding: 10px 13px;
   font-size: 12.5px;
-  color: #b91c1c;
+  color: var(--cor-perigo-texto-forte);
 }
 
 .enviar {
-  background: #111827;
-  color: #fff;
+  background: var(--cor-texto);
+  color: var(--cor-fundo);
   border: none;
   border-radius: 8px;
   padding: 11px;

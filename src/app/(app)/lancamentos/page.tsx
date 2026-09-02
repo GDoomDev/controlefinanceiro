@@ -101,7 +101,7 @@ export default async function Lancamentos({
                   <td>
                     <Link
                       href={`/lancamentos/${l.id}/estornar`}
-                      style={{ fontSize: 11, color: '#b45309', textDecoration: 'none', marginRight: 8 }}
+                      style={{ fontSize: 11, color: 'var(--cor-aviso-texto-forte)', textDecoration: 'none', marginRight: 8 }}
                     >
                       estornar
                     </Link>
