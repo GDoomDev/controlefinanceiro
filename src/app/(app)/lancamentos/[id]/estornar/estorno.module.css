@@ -1,0 +1,132 @@
+.voltar {
+  font-size: 12.5px;
+  color: #6b7280;
+  text-decoration: none;
+}
+
+.voltar:hover {
+  text-decoration: underline;
+}
+
+.compra {
+  font-size: 19px;
+  font-weight: 680;
+  letter-spacing: -0.4px;
+  margin: 10px 0 2px;
+}
+
+.compraMeta {
+  font-size: 12.5px;
+  color: #6b7280;
+  margin-bottom: 20px;
+}
+
+.secao {
+  margin-bottom: 18px;
+}
+
+.rotulo {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #9ca3af;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.chips {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.chip {
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 12.5px;
+  background: #fff;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.chipAtivo {
+  background: #111827;
+  border-color: #111827;
+  color: #fff;
+}
+
+.entrada {
+  border: 1px solid #d1d5db;
+  border-radius: 7px;
+  padding: 7px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+}
+
+.linha {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+/* A prévia do spec 8.5: o efeito exato antes de confirmar. */
+.previa {
+  border: 1px solid #e5e7eb;
+  border-left: 3px solid #2a78d6;
+  border-radius: 8px;
+  background: #f9fafb;
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.65;
+  margin-bottom: 18px;
+}
+
+.previaTitulo {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #9ca3af;
+  margin-bottom: 6px;
+}
+
+.previa b {
+  font-variant-numeric: tabular-nums;
+}
+
+.creditadas {
+  color: #1e40af;
+}
+
+.canceladas {
+  color: #b45309;
+}
+
+.confirmar {
+  background: #b91c1c;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 18px;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.confirmar:hover {
+  background: #991b1b;
+}
+
+.aviso {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 10px;
+}

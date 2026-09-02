@@ -96,6 +96,12 @@ export default async function Lancamentos({
                   </td>
                   <td className={estilos.valor}>{formatarBRL(l.valorCentavos)}</td>
                   <td>
+                    <Link
+                      href={`/lancamentos/${l.id}/estornar`}
+                      style={{ fontSize: 11, color: '#b45309', textDecoration: 'none', marginRight: 8 }}
+                    >
+                      estornar
+                    </Link>
                     <form action={acaoApagar}>
                       <input type="hidden" name="id" value={l.id} />
                       <input
