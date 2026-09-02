@@ -167,6 +167,25 @@ function agrupar(parcelas: ParcelaEstornavel[]): GrupoDeParcelas {
   };
 }
 
+export interface ParcelaProcessadaPeloEstorno {
+  /** A transação da parcela já virou CANCELADA (nunca chegou a ser cobrada). */
+  cancelada: boolean;
+  /** A parcela já tem ao menos um crédito de ESTORNO lançado (já foi cobrada
+   *  e devolvida). */
+  temCreditoEstorno: boolean;
+}
+
+/**
+ * Uma compra já foi estornada por inteiro quando TODA parcela do grupo está
+ * CANCELADA ou já tem crédito de ESTORNO — os dois destinos que `planejarEstorno`
+ * dá a cada parcela. Reaplicar o estorno nesse estado mintaria um segundo
+ * crédito para o mesmo dinheiro (spec, seção 6.2: a ação existe uma vez por
+ * compra, não uma vez por clique).
+ */
+export function estornoJaAplicado(parcelas: ParcelaProcessadaPeloEstorno[]): boolean {
+  return parcelas.length > 0 && parcelas.every((p) => p.cancelada || p.temCreditoEstorno);
+}
+
 /**
  * Traduz o plano do estorno nos números que a prévia mostra (spec, seção 8.5).
  * Contar, somar e achar a faixa de meses é decisão de dado — a tela só formata

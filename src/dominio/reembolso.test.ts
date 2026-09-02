@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   type ParcelaEstornavel,
   estadoDoReembolso,
+  estornoJaAplicado,
   ordenarPorAntiguidade,
   pendente,
   planejarEstorno,
@@ -289,5 +290,40 @@ describe('resumirPlanoEstorno', () => {
 
     expect(r.canceladas.quantidade).toBe(0);
     expect(r.totalCentavos).toBe(0);
+  });
+});
+
+describe('estornoJaAplicado', () => {
+  it('falso quando nenhuma parcela foi tratada ainda', () => {
+    expect(
+      estornoJaAplicado([{ cancelada: false, temCreditoEstorno: false }]),
+    ).toBe(false);
+  });
+
+  it('falso quando só parte das parcelas já foi tratada', () => {
+    expect(
+      estornoJaAplicado([
+        { cancelada: true, temCreditoEstorno: false },
+        { cancelada: false, temCreditoEstorno: false },
+      ]),
+    ).toBe(false);
+  });
+
+  it('verdadeiro quando toda parcela já está cancelada ou já tem crédito de estorno', () => {
+    expect(
+      estornoJaAplicado([
+        { cancelada: false, temCreditoEstorno: true },
+        { cancelada: true, temCreditoEstorno: false },
+        { cancelada: true, temCreditoEstorno: false },
+      ]),
+    ).toBe(true);
+  });
+
+  it('uma compra à vista já creditada conta como estornada', () => {
+    expect(estornoJaAplicado([{ cancelada: false, temCreditoEstorno: true }])).toBe(true);
+  });
+
+  it('lista vazia não é considerada estornada', () => {
+    expect(estornoJaAplicado([])).toBe(false);
   });
 });

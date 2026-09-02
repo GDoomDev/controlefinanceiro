@@ -2,6 +2,7 @@ import { type Competencia, lerDataCivil } from '@/dominio/data';
 import {
   type ModoCredito,
   type ParcelaEstornavel,
+  estornoJaAplicado,
   planejarEstorno,
   planejarEstornoParcial,
 } from '@/dominio/reembolso';
@@ -18,6 +19,19 @@ export interface AlvoDoEstorno {
   valorTotalCentavos: number;
   /** Em ordem de competência. */
   parcelas: ParcelaEstornavel[];
+  /**
+   * Verdadeiro quando toda parcela do grupo já está CANCELADA ou já tem
+   * crédito de ESTORNO — a compra já foi estornada por inteiro antes.
+   * `aplicarEstorno` rejeita reaplicação quando isto é verdadeiro.
+   */
+  estornadoPorInteiro: boolean;
+  /**
+   * Quanto desta compra já foi liberado: parcelas canceladas (nunca chegaram
+   * a ser cobradas) mais créditos de ESTORNO já lançados. É o que abate o
+   * teto de um novo estorno parcial — sem isto, estornos parciais repetidos
+   * poderiam devolver mais dinheiro do que a compra vale (spec, seção 6.2).
+   */
+  jaLiberadoCentavos: number;
 }
 
 function validarCompetencia(c: Competencia): void {
@@ -56,7 +70,11 @@ export async function alvoDoEstorno(
       id: true,
       competencia: true,
       valorCentavos: true,
+      status: true,
       invoice: { select: { status: true } },
+      // Só para saber se esta parcela já foi estornada antes — nenhuma
+      // aritmética de dinheiro usa o valor aqui além da soma abaixo.
+      creditos: { where: { origem: 'ESTORNO' }, select: { valorCentavos: true } },
     },
   });
 
@@ -67,12 +85,25 @@ export async function alvoDoEstorno(
     statusFatura: l.invoice?.status ?? 'ABERTA',
   }));
 
+  const jaLiberadoCentavos = linhas.reduce((total, l) => {
+    const jaCreditado = l.creditos.reduce((soma, c) => soma + c.valorCentavos, 0);
+    const liberadoPeloCancelamento = l.status === 'CANCELADA' ? l.valorCentavos : 0;
+    return total + jaCreditado + liberadoPeloCancelamento;
+  }, 0);
+
   return {
     transactionId,
     descricao: clicada.descricao,
     grupoParcelamentoId: clicada.grupoParcelamentoId,
     valorTotalCentavos: parcelas.reduce((total, p) => total + p.valorCentavos, 0),
     parcelas,
+    estornadoPorInteiro: estornoJaAplicado(
+      linhas.map((l) => ({
+        cancelada: l.status === 'CANCELADA',
+        temCreditoEstorno: l.creditos.length > 0,
+      })),
+    ),
+    jaLiberadoCentavos,
   };
 }
 
@@ -95,6 +126,14 @@ export async function aplicarEstorno(
   validarCompetencia(dados.competenciaCredito);
 
   const alvo = await alvoDoEstorno(dados.transactionId, cliente);
+
+  // Sem isto, clicar "estornar" de novo numa parcela que ficou ATIVA (foi
+  // creditada, não cancelada) mintaria um segundo crédito de ESTORNO para o
+  // mesmo dinheiro — a linha continua aparecendo em /lancamentos com o link.
+  if (alvo.estornadoPorInteiro) {
+    throw new Error('Esta compra já foi estornada');
+  }
+
   const plano = planejarEstorno(alvo.parcelas, dados.modo, dados.competenciaCredito);
 
   const gravar = async (tx: ClientePrisma): Promise<void> => {
@@ -158,9 +197,14 @@ export async function aplicarEstornoParcial(
     dados.competenciaCredito,
   );
 
-  if (credito.valorCentavos > alvo.valorTotalCentavos) {
+  // O teto é o que ainda não foi liberado desta compra — não o valor total
+  // bruto. Sem descontar cancelamentos e créditos de ESTORNO já lançados,
+  // estornos parciais repetidos (ou um parcial depois de um estorno por
+  // inteiro) devolveriam mais dinheiro do que a compra vale.
+  const restante = alvo.valorTotalCentavos - alvo.jaLiberadoCentavos;
+  if (credito.valorCentavos > restante) {
     throw new Error(
-      `Estorno de ${credito.valorCentavos} excede o valor da compra, de ${alvo.valorTotalCentavos}`,
+      `Estorno de ${credito.valorCentavos} excede o valor da compra, de ${restante}`,
     );
   }
 

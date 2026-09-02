@@ -296,6 +296,80 @@ describe('aplicarEstorno', () => {
       ).rejects.toThrow('Competência inválida');
     });
   });
+
+  it('rejeita reaplicar o estorno numa compra que já foi estornada por inteiro, sem mintar um segundo crédito', async () => {
+    await comRollback(async (tx) => {
+      const { ids } = await compraParcelada(tx, 3, 30000);
+
+      // A 1ª parcela já foi cobrada — vira crédito. As outras duas, CANCELADA.
+      const primeira = await tx.transaction.findUniqueOrThrow({
+        where: { id: ids[0] },
+        select: { invoiceId: true },
+      });
+      await fecharFatura(primeira.invoiceId!, tx);
+
+      await aplicarEstorno(
+        {
+          transactionId: ids[0],
+          modo: 'UNICO',
+          competenciaCredito: '2099-10',
+          recebidoEm: '2099-10-15',
+        },
+        tx,
+      );
+
+      // A 1ª parcela continua ATIVA (foi creditada, não cancelada) — ainda
+      // apareceria em /lancamentos com o link de estornar. Clicar de novo:
+      await expect(
+        aplicarEstorno(
+          {
+            transactionId: ids[0],
+            modo: 'UNICO',
+            competenciaCredito: '2099-11',
+            recebidoEm: '2099-11-15',
+          },
+          tx,
+        ),
+      ).rejects.toThrow('já foi estornada');
+
+      const creditos = await tx.credito.findMany({ where: { transactionId: ids[0] } });
+      expect(creditos).toHaveLength(1);
+    });
+  });
+
+  it('rejeita reaplicar o estorno numa compra à vista já estornada e cobrada', async () => {
+    await comRollback(async (tx) => {
+      const { ids } = await compraParcelada(tx, 1, 50000);
+
+      const t = await tx.transaction.findUniqueOrThrow({
+        where: { id: ids[0] },
+        select: { invoiceId: true },
+      });
+      await fecharFatura(t.invoiceId!, tx);
+
+      await aplicarEstorno(
+        {
+          transactionId: ids[0],
+          modo: 'UNICO',
+          competenciaCredito: '2099-10',
+          recebidoEm: '2099-10-15',
+        },
+        tx,
+      );
+
+      await expect(
+        aplicarEstorno(
+          {
+            transactionId: ids[0],
+            modo: 'UNICO',
+            competenciaCredito: '2099-10',
+            recebidoEm: '2099-10-16',
+          },
+          tx,
+        ),
+      ).rejects.toThrow('já foi estornada');
+    });
+  });
 });
 
 describe('aplicarEstorno — atomicidade sob falha', () => {
@@ -525,6 +599,102 @@ describe('aplicarEstornoParcial', () => {
           tx,
         ),
       ).rejects.toThrow('inteiro positivo');
+    });
+  });
+
+  it('aceita múltiplos estornos parciais que juntos não excedem a compra', async () => {
+    await comRollback(async (tx) => {
+      const { ids } = await compraParcelada(tx, 1, 30000);
+
+      await aplicarEstornoParcial(
+        {
+          transactionId: ids[0],
+          valorCentavos: 20000,
+          competenciaCredito: '2099-10',
+          recebidoEm: '2099-10-15',
+        },
+        tx,
+      );
+      await aplicarEstornoParcial(
+        {
+          transactionId: ids[0],
+          valorCentavos: 10000,
+          competenciaCredito: '2099-10',
+          recebidoEm: '2099-10-16',
+        },
+        tx,
+      );
+
+      const creditos = await tx.credito.findMany({ where: { transactionId: ids[0] } });
+      expect(creditos).toHaveLength(2);
+    });
+  });
+
+  it('rejeita quando estornos parciais somados excederiam o valor da compra', async () => {
+    await comRollback(async (tx) => {
+      const { ids } = await compraParcelada(tx, 1, 30000);
+
+      await aplicarEstornoParcial(
+        {
+          transactionId: ids[0],
+          valorCentavos: 20000,
+          competenciaCredito: '2099-10',
+          recebidoEm: '2099-10-15',
+        },
+        tx,
+      );
+
+      // Já foram estornados 20000 de 30000 — só restam 10000.
+      await expect(
+        aplicarEstornoParcial(
+          {
+            transactionId: ids[0],
+            valorCentavos: 15000,
+            competenciaCredito: '2099-10',
+            recebidoEm: '2099-10-16',
+          },
+          tx,
+        ),
+      ).rejects.toThrow('excede o valor da compra');
+
+      // O segundo pedido não deixou crédito nenhum — só o primeiro sobrevive.
+      const creditos = await tx.credito.findMany({ where: { transactionId: ids[0] } });
+      expect(creditos).toHaveLength(1);
+    });
+  });
+
+  it('rejeita estorno parcial numa compra já estornada por inteiro', async () => {
+    await comRollback(async (tx) => {
+      const { ids } = await compraParcelada(tx, 1, 30000);
+
+      const t = await tx.transaction.findUniqueOrThrow({
+        where: { id: ids[0] },
+        select: { invoiceId: true },
+      });
+      await fecharFatura(t.invoiceId!, tx);
+
+      await aplicarEstorno(
+        {
+          transactionId: ids[0],
+          modo: 'UNICO',
+          competenciaCredito: '2099-10',
+          recebidoEm: '2099-10-15',
+        },
+        tx,
+      );
+
+      // O crédito de ESTORNO já cobre a compra inteira — nada resta a devolver.
+      await expect(
+        aplicarEstornoParcial(
+          {
+            transactionId: ids[0],
+            valorCentavos: 1,
+            competenciaCredito: '2099-10',
+            recebidoEm: '2099-10-16',
+          },
+          tx,
+        ),
+      ).rejects.toThrow('excede o valor da compra');
     });
   });
 });
