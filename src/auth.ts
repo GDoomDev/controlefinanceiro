@@ -20,6 +20,11 @@ export function emailAutorizado(
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   providers: [Google],
+  // A detecção automática de host confiável do Auth.js não reconhece toda
+  // URL de deploy da Vercel (ex.: os aliases de branch "-git-<branch>-...").
+  // A Vercel já é o proxy reverso legítimo na frente do app, então confiar
+  // no host que ela repassa é seguro.
+  trustHost: true,
   pages: {
     signIn: '/login',
   },
