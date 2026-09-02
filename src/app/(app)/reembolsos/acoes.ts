@@ -3,12 +3,13 @@
 import { revalidatePath } from 'next/cache';
 
 import { registrarRecebimento } from '@/dados/reembolsos';
+import { emCentavos } from '@/dominio/dinheiro';
 
 export async function acaoRegistrarRecebimento(dadosForm: FormData): Promise<void> {
   const transactionId = String(dadosForm.get('transactionId') ?? '');
   const recebidoEm = String(dadosForm.get('recebidoEm') ?? '');
   // O campo chega em reais ("120.00"); centavos é a unidade de dentro.
-  const valorCentavos = Math.round(Number(dadosForm.get('valor') ?? 0) * 100);
+  const valorCentavos = emCentavos(Number(dadosForm.get('valor') ?? 0));
 
   await registrarRecebimento({ transactionId, valorCentavos, recebidoEm });
 

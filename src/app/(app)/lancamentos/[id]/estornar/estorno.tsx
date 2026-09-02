@@ -87,25 +87,33 @@ export function FormularioEstorno({
           />
         </div>
       ) : (
-        <div className={estilos.secao}>
-          <span className={estilos.rotulo}>Como a operadora devolveu</span>
-          <div className={estilos.chips}>
-            <button
-              type="button"
-              onClick={() => setModo('UNICO')}
-              className={`${estilos.chip} ${modo === 'UNICO' ? estilos.chipAtivo : ''}`}
-            >
-              Crédito único
-            </button>
-            <button
-              type="button"
-              onClick={() => setModo('POR_FATURA')}
-              className={`${estilos.chip} ${modo === 'POR_FATURA' ? estilos.chipAtivo : ''}`}
-            >
-              Por fatura
-            </button>
+        // Só faz sentido escolher onde o crédito único cai quando há parcela
+        // já cobrada — sem isso, `planejarEstorno` só gera cancelamento, e o
+        // `modo` não muda nada (spec, seção 8.5: "quando há parcelas em
+        // faturas já fechadas"). Zero creditadas no modo atual vale para
+        // qualquer modo: um grupo sem nenhuma parcela cobrada continua com
+        // zero creditadas trocando UNICO por POR_FATURA.
+        resumo.creditadas.quantidade > 0 && (
+          <div className={estilos.secao}>
+            <span className={estilos.rotulo}>Como a operadora devolveu</span>
+            <div className={estilos.chips}>
+              <button
+                type="button"
+                onClick={() => setModo('UNICO')}
+                className={`${estilos.chip} ${modo === 'UNICO' ? estilos.chipAtivo : ''}`}
+              >
+                Crédito único
+              </button>
+              <button
+                type="button"
+                onClick={() => setModo('POR_FATURA')}
+                className={`${estilos.chip} ${modo === 'POR_FATURA' ? estilos.chipAtivo : ''}`}
+              >
+                Por fatura
+              </button>
+            </div>
           </div>
-        </div>
+        )
       )}
 
       <div className={estilos.linha} style={{ marginBottom: 18 }}>
