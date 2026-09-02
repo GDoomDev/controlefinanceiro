@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { competenciaDe, dataCivilEm, somarMeses } from '@/dominio/data';
 import { formatarBRL } from '@/dominio/dinheiro';
 import { apagarGrupo, apagarLancamento, listarLancamentos } from '@/dados/lancamentos';
+import { materializarRecorrentes } from '@/dados/recorrentes';
 
 import estilos from './lista.module.css';
 
@@ -14,6 +15,8 @@ export default async function Lancamentos({
 }) {
   const { mes } = await searchParams;
   const competencia = mes ?? competenciaDe(dataCivilEm(new Date()));
+
+  await materializarRecorrentes(competencia);
 
   const lancamentos = await listarLancamentos(competencia);
   const total = lancamentos.reduce((a, l) => a + l.valorCentavos, 0);

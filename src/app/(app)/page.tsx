@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 import { avisosDoMes } from '@/dados/avisos';
 import { resumoDoMes } from '@/dados/painel';
+import { materializarRecorrentes } from '@/dados/recorrentes';
 import type { Severidade } from '@/dominio/avisos';
 import { competenciaDe, dataCivilEm, somarMeses } from '@/dominio/data';
 import { formatarBRL } from '@/dominio/dinheiro';
@@ -41,6 +42,12 @@ export default async function Painel({
 }) {
   const { mes } = await searchParams;
   const competencia = mes ?? competenciaDe(dataCivilEm(new Date()));
+
+  // Materializa as despesas fixas vigentes neste mês antes de ler o resumo —
+  // idempotente, então navegar de novo para o mesmo mês não duplica nada
+  // (spec, seção 13).
+  await materializarRecorrentes(competencia);
+
   const [resumo, avisos] = await Promise.all([
     resumoDoMes(competencia),
     avisosDoMes(competencia),
