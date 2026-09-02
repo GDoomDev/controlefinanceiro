@@ -41,7 +41,7 @@ export default async function Orcamentos({
         </Link>
       </div>
 
-      <p style={{ fontSize: 12.5, color: '#6b7280', marginTop: 0, marginBottom: 16 }}>
+      <p style={{ fontSize: 'var(--fonte-tamanho-corpo)', color: 'var(--cor-texto-secundario)', marginTop: 0, marginBottom: 'var(--espaco-4)' }}>
         Alterar um mês vale dele em diante, até a próxima mudança — meses
         anteriores não mudam.
       </p>
