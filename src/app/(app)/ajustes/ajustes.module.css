@@ -3,82 +3,83 @@
 }
 
 .titulo {
-  font-size: 15px;
+  font-size: var(--fonte-tamanho-subtitulo);
   font-weight: 600;
-  margin-bottom: 12px;
+  margin-bottom: var(--espaco-3);
 }
 
 .linha {
   display: flex;
-  gap: 8px;
+  gap: var(--espaco-2);
   align-items: flex-end;
   flex-wrap: wrap;
-  margin-bottom: 16px;
+  margin-bottom: var(--espaco-4);
 }
 
 .campo {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--espaco-1);
 }
 
 .rotulo {
-  font-size: 11px;
-  color: #6b7280;
+  font-size: var(--fonte-tamanho-rotulo);
+  color: var(--cor-texto-secundario);
 }
 
 .entrada {
-  border: 1px solid #d1d5db;
-  border-radius: 7px;
-  padding: 7px 9px;
-  font-size: 13px;
+  border: 1px solid var(--cor-borda-forte);
+  border-radius: var(--raio-controle);
+  padding: var(--espaco-2) var(--espaco-2);
+  font-size: var(--fonte-tamanho-corpo);
   font-family: inherit;
 }
 
 .botao {
-  background: #111827;
-  color: #fff;
+  background: var(--cor-texto);
+  color: var(--cor-fundo);
   border: none;
-  border-radius: 7px;
-  padding: 8px 14px;
-  font-size: 13px;
+  border-radius: var(--raio-controle);
+  padding: var(--espaco-2) var(--espaco-4);
+  font-size: var(--fonte-tamanho-corpo);
   cursor: pointer;
 }
 
 .lista {
-  border: 1px solid #e5e7eb;
-  border-radius: 9px;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-card);
   overflow: hidden;
 }
 
 .item {
   padding: 10px 13px;
-  font-size: 13px;
+  font-size: var(--fonte-tamanho-corpo);
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--espaco-2);
 }
 
 .item + .item {
-  border-top: 1px solid #f3f4f6;
+  border-top: 1px solid var(--cor-superficie-sutil);
 }
 
 .cor {
   width: 10px;
   height: 10px;
-  border-radius: 3px;
+  border-radius: var(--raio-fino);
   flex-shrink: 0;
 }
 
 .subs {
-  color: #9ca3af;
+  color: var(--cor-texto-mudo);
   font-size: 12px;
 }
 
+
 .vazio {
   padding: 14px;
-  font-size: 13px;
-  color: #9ca3af;
+  font-size: var(--fonte-tamanho-corpo);
+  color: var(--cor-texto-mudo);
 }
 
 .recorrenciaTopo {
@@ -93,12 +94,12 @@
 .recorrenciaControles {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--espaco-2);
   flex-wrap: wrap;
 }
 
 .pausada {
-  color: #9ca3af;
+  color: var(--cor-texto-mudo);
   font-style: italic;
 }
 
@@ -106,25 +107,25 @@
   background: none;
   border: none;
   padding: 0;
-  font-size: 11px;
-  color: #6b7280;
+  font-size: var(--fonte-tamanho-rotulo);
+  color: var(--cor-texto-secundario);
   cursor: pointer;
   text-decoration: underline;
   font-family: inherit;
 }
 
 .entradaPequena {
-  border: 1px solid #d1d5db;
-  border-radius: 7px;
-  padding: 5px 7px;
-  font-size: 11px;
+  border: 1px solid var(--cor-borda-forte);
+  border-radius: var(--raio-controle);
+  padding: var(--espaco-1) var(--espaco-2);
+  font-size: var(--fonte-tamanho-rotulo);
   font-family: inherit;
   width: 120px;
 }
 
 .catalogoCores {
   display: flex;
-  gap: 8px;
+  gap: var(--espaco-2);
   align-items: center;
   flex-wrap: wrap;
 }
@@ -132,7 +133,7 @@
 .swatch {
   width: 28px;
   height: 28px;
-  border-radius: 7px;
+  border-radius: var(--raio-controle);
   border: 2px solid transparent;
   cursor: pointer;
   padding: 0;
@@ -144,14 +145,14 @@
 }
 
 .swatchAtivo {
-  border-color: #111827;
+  border-color: var(--cor-texto);
 }
 
 .swatchPersonalizada {
   width: 28px;
   height: 28px;
-  border-radius: 7px;
-  border: 2px dashed #9ca3af;
+  border-radius: var(--raio-controle);
+  border: 2px dashed var(--cor-texto-mudo);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -172,8 +173,8 @@
 }
 
 .avisoDaltonismo {
-  font-size: 11px;
-  color: #9ca3af;
+  font-size: var(--fonte-tamanho-rotulo);
+  color: var(--cor-texto-mudo);
   margin: 6px 0 0;
   max-width: 320px;
 }
@@ -182,8 +183,8 @@
   background: none;
   border: none;
   padding: 0;
-  font-size: 11px;
-  color: #b91c1c;
+  font-size: var(--fonte-tamanho-rotulo);
+  color: var(--cor-perigo-texto-forte);
   cursor: pointer;
   text-decoration: underline;
   font-family: inherit;
@@ -191,9 +192,9 @@
 }
 
 .dialogo {
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  padding: 20px;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-card);
+  padding: var(--espaco-5);
   max-width: 360px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
 }
@@ -204,33 +205,33 @@
 
 .dialogoAviso {
   font-size: 12.5px;
-  color: #6b7280;
-  margin: 8px 0 16px;
+  color: var(--cor-texto-secundario);
+  margin: var(--espaco-2) 0 var(--espaco-4);
 }
 
 .dialogoBotoes {
   display: flex;
-  gap: 8px;
+  gap: var(--espaco-2);
   justify-content: flex-end;
 }
 
 .botaoCancelar {
   background: none;
-  border: 1px solid #d1d5db;
-  border-radius: 7px;
-  padding: 7px 14px;
-  font-size: 13px;
+  border: 1px solid var(--cor-borda-forte);
+  border-radius: var(--raio-controle);
+  padding: var(--espaco-2) var(--espaco-4);
+  font-size: var(--fonte-tamanho-corpo);
   cursor: pointer;
   font-family: inherit;
 }
 
 .botaoConfirmarExclusao {
-  background: #b91c1c;
-  color: #fff;
+  background: var(--cor-perigo-texto-forte);
+  color: var(--cor-fundo);
   border: none;
-  border-radius: 7px;
-  padding: 7px 14px;
-  font-size: 13px;
+  border-radius: var(--raio-controle);
+  padding: var(--espaco-2) var(--espaco-4);
+  font-size: var(--fonte-tamanho-corpo);
   cursor: pointer;
   font-family: inherit;
 }
