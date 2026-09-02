@@ -217,6 +217,26 @@ describe('registrarRecebimento', () => {
     });
   });
 
+  it('diasParado continua contando a partir da despesa mesmo após um recebimento parcial', async () => {
+    await comRollback(async (tx) => {
+      const { id } = await despesaReembolsavel(tx, 90000, 60000);
+
+      // Recebido meses depois da despesa: se diasParado fosse derivado da
+      // data do recebimento (em vez da despesa) uma vez que já existe
+      // crédito, o número bateria com essa conta errada, bem diferente da
+      // certa — o gap grande torna as duas contas facilmente distinguíveis.
+      await registrarRecebimento(
+        { transactionId: id, valorCentavos: 20000, recebidoEm: '2100-03-05' },
+        tx,
+      );
+
+      const { pendentes } = await listarReembolsos(tx);
+      const r = pendentes.find((x) => x.transactionId === id)!;
+
+      expect(r.diasParado).toBe(diasEntre(lerDataCivil(DATA), dataCivilEm(new Date())));
+    });
+  });
+
   it('rejeita recebimento acima do pendente', async () => {
     await comRollback(async (tx) => {
       const { id } = await despesaReembolsavel(tx, 90000, 60000);
