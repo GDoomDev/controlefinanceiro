@@ -1,3 +1,5 @@
+import { hexValido, slotDisponivel } from '@/dominio/paleta';
+
 import { prisma } from './prisma';
 import type { ClientePrisma } from './tipos';
 
@@ -5,7 +7,8 @@ export interface CategoriaComSubs {
   id: string;
   nome: string;
   ordem: number;
-  corSlot: number;
+  corSlot: number | null;
+  corPersonalizada: string | null;
   arquivada: boolean;
   subcategorias: Array<{ id: string; nome: string; arquivada: boolean }>;
 }
@@ -41,6 +44,7 @@ export async function listarCategorias(
     nome: c.nome,
     ordem: c.ordem,
     corSlot: c.corSlot,
+    corPersonalizada: c.corPersonalizada,
     arquivada: c.arquivada,
     subcategorias: c.subcategorias.map((s) => ({
       id: s.id,
@@ -50,19 +54,77 @@ export async function listarCategorias(
   }));
 }
 
+export interface NovaCategoria {
+  nome: string;
+  corSlot: number | null;
+  corPersonalizada?: string | null;
+}
+
+export interface SlotOcupado {
+  slot: number;
+  categoriaNome: string;
+}
+
+/**
+ * Quais dos 6 slots da paleta já pertencem a alguma categoria ativa. Uma
+ * categoria arquivada libera seu slot; uma categoria com cor personalizada
+ * nunca ocupou slot nenhum.
+ */
+export async function slotsEmUso(
+  cliente: ClientePrisma = prisma,
+): Promise<SlotOcupado[]> {
+  const linhas = await cliente.budgetCategory.findMany({
+    where: { arquivada: false, corPersonalizada: null },
+    select: { corSlot: true, nome: true },
+  });
+
+  const ocupados: SlotOcupado[] = [];
+  for (const l of linhas) {
+    if (l.corSlot === null) continue;
+    ocupados.push({ slot: l.corSlot, categoriaNome: l.nome });
+  }
+  return ocupados;
+}
+
 export async function criarCategoria(
-  dados: { nome: string; corSlot: number },
+  dados: NovaCategoria,
   cliente: ClientePrisma = prisma,
 ): Promise<{ id: string }> {
   const nome = nomeLimpo(dados.nome);
+  const corPersonalizada = dados.corPersonalizada ?? null;
 
-  if (
-    !Number.isInteger(dados.corSlot) ||
-    dados.corSlot < COR_SLOT_MIN ||
-    dados.corSlot > COR_SLOT_MAX
-  ) {
+  const temSlot = dados.corSlot !== null;
+  const temPersonalizada = corPersonalizada !== null;
+
+  if (temSlot === temPersonalizada) {
     throw new Error(
-      `corSlot deve ser inteiro entre ${COR_SLOT_MIN} e ${COR_SLOT_MAX}: ${dados.corSlot}`,
+      'Informe exatamente uma cor: um slot da paleta ou uma cor personalizada',
+    );
+  }
+
+  if (temSlot) {
+    if (
+      !Number.isInteger(dados.corSlot) ||
+      dados.corSlot! < COR_SLOT_MIN ||
+      dados.corSlot! > COR_SLOT_MAX
+    ) {
+      throw new Error(
+        `corSlot deve ser inteiro entre ${COR_SLOT_MIN} e ${COR_SLOT_MAX}: ${dados.corSlot}`,
+      );
+    }
+
+    const ocupados = await slotsEmUso(cliente);
+    if (!slotDisponivel(ocupados.map((o) => o.slot), dados.corSlot!)) {
+      const ocupante = ocupados.find((o) => o.slot === dados.corSlot);
+      throw new Error(
+        `Slot ${dados.corSlot} já está em uso por "${ocupante?.categoriaNome}"`,
+      );
+    }
+  }
+
+  if (temPersonalizada && !hexValido(corPersonalizada!)) {
+    throw new Error(
+      `Cor personalizada inválida, esperado "#rrggbb": ${corPersonalizada}`,
     );
   }
 
@@ -72,7 +134,12 @@ export async function criarCategoria(
   });
 
   const criada = await cliente.budgetCategory.create({
-    data: { nome, corSlot: dados.corSlot, ordem: (ultima?.ordem ?? 0) + 1 },
+    data: {
+      nome,
+      corSlot: dados.corSlot,
+      corPersonalizada,
+      ordem: (ultima?.ordem ?? 0) + 1,
+    },
     select: { id: true },
   });
 

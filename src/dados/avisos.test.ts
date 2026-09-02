@@ -14,7 +14,11 @@ async function categoriaComGasto(
   orcadoCentavos: number,
   gastoCentavos: number,
 ) {
-  const cat = await criarCategoria({ nome, corSlot: 1 }, tx);
+  // Cor personalizada em vez de slot: este helper cria várias categorias na
+  // mesma transação (ver 'nunca mostra mais de cinco avisos'), e um slot fixo
+  // colidiria com a nova checagem de unicidade — a cor não importa para o
+  // que este arquivo testa.
+  const cat = await criarCategoria({ nome, corSlot: null, corPersonalizada: '#123456' }, tx);
   const sub = await criarSubcategoria({ budgetCategoryId: cat.id, nome: `${nome}-sub` }, tx);
   await definirAlocacao(
     { budgetCategoryId: cat.id, vigenteDe: '2099-09', valorCentavos: orcadoCentavos },
