@@ -88,8 +88,10 @@ model BudgetCategory {
   id          String              @id @default(cuid())
   nome        String              @unique
   ordem       Int
-  /// 1..6 — slot da paleta categórica. Ver spec, seção 9.
-  corSlot     Int
+  /// 1..6 — slot da paleta categórica. Nulo quando `corPersonalizada` é usada.
+  corSlot     Int?
+  /// "#rrggbb" — cor livre escolhida pelo usuário. Nulo quando usa `corSlot`.
+  corPersonalizada String?
   arquivada   Boolean             @default(false)
   subcategorias Subcategory[]
   alocacoes   BudgetAllocation[]
