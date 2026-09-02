@@ -46,3 +46,6 @@ next-env.d.ts
 
 # worktrees
 .worktrees/
+
+# estado local de ferramentas de agente
+.claude/
