@@ -48,9 +48,13 @@ export default async function Painel({
   // (spec, seção 13).
   await materializarRecorrentes(competencia);
 
+  // `avisosDoMes` também precisa do resumo do mês (pra cruzar com os
+  // orçamentos) — passar a Promise já em voo evita calcular o resumo duas
+  // vezes em paralelo, sem perder o paralelismo entre as duas chamadas.
+  const resumoPromise = resumoDoMes(competencia);
   const [resumo, avisos] = await Promise.all([
-    resumoDoMes(competencia),
-    avisosDoMes(competencia),
+    resumoPromise,
+    avisosDoMes(competencia, undefined, resumoPromise),
   ]);
 
   // Mês passado: só o que de fato aconteceu. Mês corrente e futuro: a

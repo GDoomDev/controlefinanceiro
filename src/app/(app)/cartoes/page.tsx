@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
 import { listarCartoes } from '@/dados/cartoes';
-import { listarFaturas, totalDaFatura } from '@/dados/faturas';
+import { listarFaturasDeCartoes, totaisDasFaturas } from '@/dados/faturas';
 import { competenciaDe, dataCivilEm, formatarDataCivil } from '@/dominio/data';
 import { janelaDeFaturas } from '@/dominio/fatura';
 import { formatarBRL } from '@/dominio/dinheiro';
@@ -26,22 +26,27 @@ export default async function Cartoes({
   const cartoes = await listarCartoes();
   const mesCorrente = competenciaDe(dataCivilEm(new Date()));
 
-  const comFaturas = await Promise.all(
-    cartoes.map(async (cartao) => {
-      const todasAsFaturas = await listarFaturas(cartao.id);
-      const { visiveis, ocultas } = mostrarTodas
-        ? { visiveis: todasAsFaturas, ocultas: 0 }
-        : janelaDeFaturas(todasAsFaturas, mesCorrente);
+  // Antes: 1 consulta de faturas por cartão + 3 consultas de total por
+  // fatura visível — dezenas de consultas sequenciais numa tela com poucos
+  // cartões e algumas faturas cada. Agora: 1 consulta pra todas as faturas
+  // de todos os cartões, mais 2 consultas pra todos os totais de uma vez.
+  const faturasPorCartao = await listarFaturasDeCartoes(cartoes.map((c) => c.id));
 
-      const comTotais = await Promise.all(
-        visiveis.map(async (f) => ({
-          ...f,
-          total: await totalDaFatura(f.id),
-        })),
-      );
-      return { cartao, faturas: comTotais, ocultas };
-    }),
-  );
+  const janelas = cartoes.map((cartao) => {
+    const todasAsFaturas = faturasPorCartao.get(cartao.id) ?? [];
+    const { visiveis, ocultas } = mostrarTodas
+      ? { visiveis: todasAsFaturas, ocultas: 0 }
+      : janelaDeFaturas(todasAsFaturas, mesCorrente);
+    return { cartao, visiveis, ocultas };
+  });
+
+  const totais = await totaisDasFaturas(janelas.flatMap((j) => j.visiveis));
+
+  const comFaturas = janelas.map(({ cartao, visiveis, ocultas }) => ({
+    cartao,
+    faturas: visiveis.map((f) => ({ ...f, total: totais.get(f.id) ?? 0 })),
+    ocultas,
+  }));
 
   const hoje = formatarDataCivil(dataCivilEm(new Date()));
 

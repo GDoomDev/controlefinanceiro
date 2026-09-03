@@ -5,6 +5,7 @@ import { criarCartao } from './cartoes';
 import { criarCategoria, criarSubcategoria } from './categorias';
 import { criarLancamento } from './lancamentos';
 import { definirAlocacao } from './orcamentos';
+import { resumoDoMes } from './painel';
 import { comRollback } from './rollback';
 import type { ClientePrisma } from './tipos';
 
@@ -237,6 +238,34 @@ describe('avisosDoMes', () => {
       const aviso = visiveis.find((a) => a.texto.includes('reembolsos pendentes'));
       expect(aviso).toBeDefined();
       expect(aviso?.texto).toContain('R$ 200,00');
+    });
+  });
+});
+
+describe('avisosDoMes com resumo pré-calculado', () => {
+  it('devolve o mesmo resultado passando o resumo já pronto (evita recalcular)', async () => {
+    await comRollback(async (tx) => {
+      await categoriaComGasto(tx, 'Compras', 100000, 90000);
+
+      const semReuso = await avisosDoMes('2099-09', tx);
+
+      const resumo = await resumoDoMes('2099-09', tx);
+      const comReuso = await avisosDoMes('2099-09', tx, resumo);
+
+      expect(comReuso).toEqual(semReuso);
+    });
+  });
+
+  it('devolve o mesmo resultado passando a Promise do resumo, ainda não resolvida', async () => {
+    await comRollback(async (tx) => {
+      await categoriaComGasto(tx, 'Compras', 100000, 90000);
+
+      const semReuso = await avisosDoMes('2099-09', tx);
+
+      const resumoPromise = resumoDoMes('2099-09', tx);
+      const comReuso = await avisosDoMes('2099-09', tx, resumoPromise);
+
+      expect(comReuso).toEqual(semReuso);
     });
   });
 });
