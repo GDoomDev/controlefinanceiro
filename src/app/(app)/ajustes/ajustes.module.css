@@ -234,3 +234,23 @@
   cursor: pointer;
   font-family: inherit;
 }
+
+.subLista {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.subItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dialogoCampos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+  margin: var(--espaco-3) 0 0;
+}

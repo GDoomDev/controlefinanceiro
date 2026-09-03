@@ -7,6 +7,8 @@ import {
   buscarSubcategoria,
   criarCategoria,
   criarSubcategoria,
+  editarSubcategoria,
+  arquivarSubcategoria,
 } from '@/dados/categorias';
 import { criarCartao } from '@/dados/cartoes';
 import { emCentavos } from '@/dominio/dinheiro';
@@ -40,6 +42,21 @@ export async function acaoCriarSubcategoria(dadosForm: FormData): Promise<void> 
     nome: String(dadosForm.get('nome') ?? ''),
   });
   revalidatePath('/ajustes');
+}
+
+export async function acaoEditarSubcategoria(dadosForm: FormData): Promise<void> {
+  await editarSubcategoria(String(dadosForm.get('id') ?? ''), {
+    nome: String(dadosForm.get('nome') ?? ''),
+  });
+  revalidatePath('/ajustes');
+}
+
+export async function acaoArquivarSubcategoria(dadosForm: FormData): Promise<void> {
+  await arquivarSubcategoria(String(dadosForm.get('id') ?? ''));
+  revalidatePath('/ajustes');
+  // A subcategoria some do seletor de Despesa Fixa (mesma tela) e do seletor de
+  // subcategoria em Lançamentos — ambos revalidados aqui.
+  revalidatePath('/lancamentos/novo');
 }
 
 export async function acaoCriarCartao(dadosForm: FormData): Promise<void> {

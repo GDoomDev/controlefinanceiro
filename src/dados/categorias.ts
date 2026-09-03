@@ -158,6 +158,18 @@ export async function criarSubcategoria(
   });
 }
 
+export async function editarSubcategoria(
+  id: string,
+  dados: { nome: string },
+  cliente: ClientePrisma = prisma,
+): Promise<void> {
+  const nome = nomeLimpo(dados.nome);
+  await cliente.subcategory.update({
+    where: { id },
+    data: { nome },
+  });
+}
+
 export async function buscarSubcategoria(
   id: string,
   cliente: ClientePrisma = prisma,
@@ -173,6 +185,16 @@ export async function arquivarCategoria(
   cliente: ClientePrisma = prisma,
 ): Promise<void> {
   await cliente.budgetCategory.update({
+    where: { id },
+    data: { arquivada: true },
+  });
+}
+
+export async function arquivarSubcategoria(
+  id: string,
+  cliente: ClientePrisma = prisma,
+): Promise<void> {
+  await cliente.subcategory.update({
     where: { id },
     data: { arquivada: true },
   });

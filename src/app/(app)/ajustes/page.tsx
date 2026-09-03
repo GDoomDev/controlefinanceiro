@@ -2,7 +2,6 @@ import { listarCategorias, slotsEmUso } from '@/dados/categorias';
 import { listarCartoes } from '@/dados/cartoes';
 import { listarRecorrentes } from '@/dados/recorrentes';
 import { formatarBRL } from '@/dominio/dinheiro';
-import { corDaCategoria } from '@/dominio/paleta';
 
 import {
   acaoCriarCartao,
@@ -12,9 +11,10 @@ import {
   acaoEncerrarRecorrencia,
   acaoAlternarRecorrencia,
   acaoExcluirCategoria,
+  acaoEditarSubcategoria,
+  acaoArquivarSubcategoria,
 } from './acoes';
-import { BotaoExcluirCategoria } from './botao-excluir-categoria';
-import { SeletorDeCor } from './seletor-de-cor';
+import { ListaCategorias } from './lista-categorias';
 import estilos from './ajustes.module.css';
 
 export default async function Ajustes() {
@@ -32,52 +32,17 @@ export default async function Ajustes() {
       <section className={estilos.secao}>
         <div className={estilos.titulo}>Orçamentos</div>
 
-        <form action={acaoCriarCategoria} className={estilos.linha}>
-          <div className={estilos.campo}>
-            <label className={estilos.rotulo} htmlFor="cat-nome">
-              Nome
-            </label>
-            <input
-              id="cat-nome"
-              name="nome"
-              required
-              className={estilos.entrada}
-              placeholder="Alimentação"
-            />
-          </div>
-          <SeletorDeCor key={ocupados.length} ocupados={ocupados} />
-          <button type="submit" className={estilos.botao}>
-            Criar orçamento
-          </button>
-        </form>
+        <ListaCategorias
+          categoriasIniciais={categorias}
+          ocupados={ocupados}
+          acaoCriar={acaoCriarCategoria}
+          acaoExcluir={acaoExcluirCategoria}
+          acaoEditarSubcategoria={acaoEditarSubcategoria}
+          acaoArquivarSubcategoria={acaoArquivarSubcategoria}
+        />
 
-        <div className={estilos.lista}>
-          {categorias.length === 0 ? (
-            <div className={estilos.vazio}>Nenhum orçamento cadastrado ainda.</div>
-          ) : (
-            categorias.map((c) => (
-              <div key={c.id} className={estilos.item}>
-                <span
-                  className={estilos.cor}
-                  style={{ background: corDaCategoria(c) }}
-                />
-                <strong>{c.nome}</strong>
-                <span className={estilos.subs}>
-                  {c.subcategorias.length === 0
-                    ? 'sem subcategorias'
-                    : c.subcategorias.map((s) => s.nome).join(' · ')}
-                </span>
-                <BotaoExcluirCategoria
-                  categoriaId={c.id}
-                  categoriaNome={c.nome}
-                  acao={acaoExcluirCategoria}
-                />
-              </div>
-            ))
-          )}
-        </div>
+
       </section>
-
       <section className={estilos.secao}>
         <div className={estilos.titulo}>Subcategorias</div>
         {categorias.length === 0 ? (

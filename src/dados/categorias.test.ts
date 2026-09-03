@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   arquivarCategoria,
+  arquivarSubcategoria,
   criarCategoria,
   criarSubcategoria,
+  editarSubcategoria,
   listarCategorias,
   slotsEmUso,
 } from './categorias';
@@ -69,6 +71,47 @@ describe('criarSubcategoria', () => {
   });
 });
 
+describe('editarSubcategoria', () => {
+  it('atualiza o nome e reflete na listagem', async () => {
+    await comRollback(async (tx) => {
+      const cat = await criarCategoria({ nome: 'Alimentação', corSlot: 2 }, tx);
+      const sub = await criarSubcategoria(
+        { budgetCategoryId: cat.id, nome: 'Delivery' },
+        tx,
+      );
+      await editarSubcategoria(sub.id, { nome: 'Delivery e Apps' }, tx);
+      const lista = await listarCategorias(tx);
+      const nomes = lista.find((c) => c.id === cat.id)!.subcategorias.map((s) => s.nome);
+      expect(nomes).toEqual(['Delivery e Apps']);
+    });
+  });
+
+  it('rejeita nome vazio', async () => {
+    await comRollback(async (tx) => {
+      const cat = await criarCategoria({ nome: 'Alimentação', corSlot: 2 }, tx);
+      const sub = await criarSubcategoria(
+        { budgetCategoryId: cat.id, nome: 'Delivery' },
+        tx,
+      );
+      await expect(editarSubcategoria(sub.id, { nome: '  ' }, tx)).rejects.toThrow();
+    });
+  });
+
+  it('rejeita colisão com outra subcategoria do mesmo orçamento', async () => {
+    await comRollback(async (tx) => {
+      const cat = await criarCategoria({ nome: 'Alimentação', corSlot: 2 }, tx);
+      await criarSubcategoria({ budgetCategoryId: cat.id, nome: 'Delivery' }, tx);
+      const mercado = await criarSubcategoria(
+        { budgetCategoryId: cat.id, nome: 'Mercado' },
+        tx,
+      );
+      await expect(
+        editarSubcategoria(mercado.id, { nome: 'Delivery' }, tx),
+      ).rejects.toThrow();
+    });
+  });
+});
+
 describe('arquivarCategoria', () => {
   it('some da listagem depois de arquivada', async () => {
     await comRollback(async (tx) => {
@@ -76,6 +119,23 @@ describe('arquivarCategoria', () => {
       await arquivarCategoria(id, tx);
       const lista = await listarCategorias(tx);
       expect(lista.find((c) => c.id === id)).toBeUndefined();
+    });
+  });
+});
+
+describe('arquivarSubcategoria', () => {
+  it('some da listagem depois de arquivada, mas o orçamento continua ativo', async () => {
+    await comRollback(async (tx) => {
+      const cat = await criarCategoria({ nome: 'Alimentação', corSlot: 2 }, tx);
+      const sub = await criarSubcategoria(
+        { budgetCategoryId: cat.id, nome: 'Delivery' },
+        tx,
+      );
+      await arquivarSubcategoria(sub.id, tx);
+      const lista = await listarCategorias(tx);
+      const categoria = lista.find((c) => c.id === cat.id);
+      expect(categoria).toBeDefined();
+      expect(categoria!.subcategorias).toEqual([]);
     });
   });
 });
