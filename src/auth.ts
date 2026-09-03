@@ -20,6 +20,15 @@ export function emailAutorizado(
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   providers: [Google],
+  // Sessão em JWT, não em banco: o middleware roda em praticamente toda
+  // rota (src/proxy.ts) e, com sessão via banco, cada navegação fazia uma
+  // consulta ao Postgres só para validar quem já está logado. Com um único
+  // usuário e sem necessidade de revogar sessão do lado do servidor, essa
+  // consulta é custo puro. O adapter continua sendo usado só para
+  // persistir a conta OAuth no primeiro login.
+  session: {
+    strategy: 'jwt',
+  },
   // A detecção automática de host confiável do Auth.js não reconhece toda
   // URL de deploy da Vercel (ex.: os aliases de branch "-git-<branch>-...").
   // A Vercel já é o proxy reverso legítimo na frente do app, então confiar
