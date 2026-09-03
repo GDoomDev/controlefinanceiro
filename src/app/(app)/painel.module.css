@@ -20,7 +20,7 @@
   color: var(--cor-texto-mudo);
   text-decoration: none;
   padding: 2px var(--espaco-2);
-  border-radius: var(--raio-fino);
+  border-radius: 6px;
 }
 
 .mesLink:hover {
