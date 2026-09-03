@@ -5,8 +5,7 @@ import { useOptimistic, useRef } from 'react';
 import type { Cartao } from '@/dados/cartoes';
 import type { CategoriaComSubs } from '@/dados/categorias';
 import type { RecorrenciaListada } from '@/dados/recorrentes';
-import { formatarBRL } from '@/dominio/dinheiro';
-import { emCentavos } from '@/dominio/dinheiro';
+import { emCentavos, formatarBRL } from '@/dominio/dinheiro';
 import type { MetodoPagamento } from '@/dominio/lancamento';
 
 import { BotaoEditarRecorrencia } from './botao-editar-recorrencia';
@@ -212,12 +211,14 @@ export function ListaRecorrentes({
                 </span>
 
                 <div className={estilos.recorrenciaControles}>
-                  <BotaoEditarRecorrencia
-                    recorrencia={r}
-                    categorias={categorias}
-                    cartoes={cartoes}
-                    acao={acaoEditar}
-                  />
+                  {!r.id.startsWith('otimista-') && (
+                    <BotaoEditarRecorrencia
+                      recorrencia={r}
+                      categorias={categorias}
+                      cartoes={cartoes}
+                      acao={acaoEditar}
+                    />
+                  )}
                   <form action={acaoAlternar}>
                     <input type="hidden" name="id" value={r.id} />
                     <input type="hidden" name="ativa" value={r.ativa ? '1' : '0'} />

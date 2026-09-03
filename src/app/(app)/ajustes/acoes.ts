@@ -50,6 +50,7 @@ export async function acaoEditarSubcategoria(dadosForm: FormData): Promise<void>
     nome: String(dadosForm.get('nome') ?? ''),
   });
   revalidatePath('/ajustes');
+  revalidatePath('/lancamentos/novo');
 }
 
 export async function acaoArquivarSubcategoria(dadosForm: FormData): Promise<void> {
@@ -157,12 +158,17 @@ export async function acaoEditarCartao(dadosForm: FormData): Promise<void> {
     diaVencimento: Number(dadosForm.get('diaVencimento')),
   });
   revalidatePath('/ajustes');
+  revalidatePath('/cartoes');
+  revalidatePath('/');
 }
 
 export async function acaoArquivarCartao(dadosForm: FormData): Promise<void> {
   await arquivarCartao(String(dadosForm.get('id') ?? ''));
   revalidatePath('/ajustes');
-  // O cartão some do seletor de cartão em Despesa Fixa (mesma tela) e do
-  // seletor de método de pagamento em Lançamentos.
+  // O cartão some do seletor de cartão em Despesa Fixa (mesma tela), do
+  // seletor de método de pagamento em Lançamentos, da lista em /cartoes e
+  // dos avisos do mês na Home (avisosDoMes → listarCartoes).
   revalidatePath('/lancamentos/novo');
+  revalidatePath('/cartoes');
+  revalidatePath('/');
 }

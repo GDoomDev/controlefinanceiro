@@ -97,8 +97,12 @@ export function ListaCartoes({
               <span className={estilos.subs}>
                 fecha dia {c.diaFechamento} · vence dia {c.diaVencimento}
               </span>
-              <BotaoEditarCartao cartao={c} acao={acaoEditar} />
-              <BotaoExcluirCartao cartaoId={c.id} cartaoNome={c.nome} acao={acaoExcluir} />
+              {!c.id.startsWith('otimista-') && (
+                <>
+                  <BotaoEditarCartao cartao={c} acao={acaoEditar} />
+                  <BotaoExcluirCartao cartaoId={c.id} cartaoNome={c.nome} acao={acaoExcluir} />
+                </>
+              )}
             </div>
           ))
         )}

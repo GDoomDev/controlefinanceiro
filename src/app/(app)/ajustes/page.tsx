@@ -44,8 +44,6 @@ export default async function Ajustes() {
           acaoEditarSubcategoria={acaoEditarSubcategoria}
           acaoArquivarSubcategoria={acaoArquivarSubcategoria}
         />
-
-
       </section>
       <section className={estilos.secao}>
         <div className={estilos.titulo}>Subcategorias</div>

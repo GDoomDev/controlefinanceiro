@@ -21,6 +21,11 @@ export function BotaoEditarRecorrencia({
 }) {
   const dialogoRef = useRef<HTMLDialogElement>(null);
 
+  async function salvar(dadosForm: FormData) {
+    await acao(dadosForm);
+    dialogoRef.current?.close();
+  }
+
   return (
     <>
       <button
@@ -32,7 +37,7 @@ export function BotaoEditarRecorrencia({
       </button>
       <dialog ref={dialogoRef} className={estilos.dialogo}>
         <p>Editar despesa fixa</p>
-        <form action={acao} className={estilos.dialogoCampos}>
+        <form action={salvar} className={estilos.dialogoCampos}>
           <input type="hidden" name="id" value={recorrencia.id} />
           <div className={estilos.campo}>
             <label

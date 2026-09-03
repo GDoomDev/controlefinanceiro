@@ -20,6 +20,11 @@ export function BotaoEditarSubcategoria({
 }) {
   const dialogoRef = useRef<HTMLDialogElement>(null);
 
+  async function salvar(dadosForm: FormData) {
+    await acao(dadosForm);
+    dialogoRef.current?.close();
+  }
+
   return (
     <>
       <button
@@ -31,7 +36,7 @@ export function BotaoEditarSubcategoria({
       </button>
       <dialog ref={dialogoRef} className={estilos.dialogo}>
         <p>Editar subcategoria</p>
-        <form action={acao} className={estilos.dialogoCampos}>
+        <form action={salvar} className={estilos.dialogoCampos}>
           <input type="hidden" name="id" value={subcategoriaId} />
           <div className={estilos.campo}>
             <label

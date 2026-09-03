@@ -15,6 +15,11 @@ export function BotaoEditarCartao({
 }) {
   const dialogoRef = useRef<HTMLDialogElement>(null);
 
+  async function salvar(dadosForm: FormData) {
+    await acao(dadosForm);
+    dialogoRef.current?.close();
+  }
+
   return (
     <>
       <button
@@ -26,7 +31,7 @@ export function BotaoEditarCartao({
       </button>
       <dialog ref={dialogoRef} className={estilos.dialogo}>
         <p>Editar cartão</p>
-        <form action={acao} className={estilos.dialogoCampos}>
+        <form action={salvar} className={estilos.dialogoCampos}>
           <input type="hidden" name="id" value={cartao.id} />
           <div className={estilos.campo}>
             <label className={estilos.rotulo} htmlFor={`cartao-editar-nome-${cartao.id}`}>
