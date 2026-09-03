@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 
 import { fecharFatura, pagarFatura } from '@/dados/faturas';
+import { arquivarCartao, criarCartao, editarCartao } from '@/dados/cartoes';
 
 export async function acaoFecharFatura(dadosForm: FormData): Promise<void> {
   await fecharFatura(String(dadosForm.get('id') ?? ''));
@@ -15,4 +16,30 @@ export async function acaoPagarFatura(dadosForm: FormData): Promise<void> {
     String(dadosForm.get('pagaEm') ?? ''),
   );
   revalidatePath('/cartoes');
+}
+
+export async function acaoCriarCartao(dadosForm: FormData): Promise<void> {
+  await criarCartao({
+    nome: String(dadosForm.get('nome') ?? ''),
+    diaFechamento: Number(dadosForm.get('diaFechamento')),
+    diaVencimento: Number(dadosForm.get('diaVencimento')),
+  });
+  revalidatePath('/cartoes');
+}
+
+export async function acaoEditarCartao(dadosForm: FormData): Promise<void> {
+  await editarCartao(String(dadosForm.get('id') ?? ''), {
+    nome: String(dadosForm.get('nome') ?? ''),
+    diaFechamento: Number(dadosForm.get('diaFechamento')),
+    diaVencimento: Number(dadosForm.get('diaVencimento')),
+  });
+  revalidatePath('/cartoes');
+  revalidatePath('/');
+}
+
+export async function acaoArquivarCartao(dadosForm: FormData): Promise<void> {
+  await arquivarCartao(String(dadosForm.get('id') ?? ''));
+  revalidatePath('/lancamentos/novo');
+  revalidatePath('/cartoes');
+  revalidatePath('/');
 }

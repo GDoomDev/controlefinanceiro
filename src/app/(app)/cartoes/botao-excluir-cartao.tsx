@@ -2,7 +2,7 @@
 
 import { useRef } from 'react';
 
-import estilos from './ajustes.module.css';
+import estilos from './gestao.module.css';
 
 export function BotaoExcluirCartao({
   cartaoId,

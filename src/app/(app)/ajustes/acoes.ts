@@ -3,7 +3,6 @@
 import { revalidatePath } from 'next/cache';
 
 import { buscarSubcategoria } from '@/dados/categorias';
-import { criarCartao, editarCartao, arquivarCartao } from '@/dados/cartoes';
 import { emCentavos } from '@/dominio/dinheiro';
 import type { MetodoPagamento } from '@/dominio/lancamento';
 import {
@@ -13,15 +12,6 @@ import {
   pausarRecorrencia,
   retomarRecorrencia,
 } from '@/dados/recorrentes';
-
-export async function acaoCriarCartao(dadosForm: FormData): Promise<void> {
-  await criarCartao({
-    nome: String(dadosForm.get('nome') ?? ''),
-    diaFechamento: Number(dadosForm.get('diaFechamento')),
-    diaVencimento: Number(dadosForm.get('diaVencimento')),
-  });
-  revalidatePath('/ajustes');
-}
 
 export async function acaoCriarRecorrencia(dadosForm: FormData): Promise<void> {
   const metodo = String(dadosForm.get('metodo') ?? 'PIX') as MetodoPagamento;
@@ -91,26 +81,4 @@ export async function acaoAlternarRecorrencia(dadosForm: FormData): Promise<void
     await retomarRecorrencia(id);
   }
   revalidatePath('/ajustes');
-}
-
-export async function acaoEditarCartao(dadosForm: FormData): Promise<void> {
-  await editarCartao(String(dadosForm.get('id') ?? ''), {
-    nome: String(dadosForm.get('nome') ?? ''),
-    diaFechamento: Number(dadosForm.get('diaFechamento')),
-    diaVencimento: Number(dadosForm.get('diaVencimento')),
-  });
-  revalidatePath('/ajustes');
-  revalidatePath('/cartoes');
-  revalidatePath('/');
-}
-
-export async function acaoArquivarCartao(dadosForm: FormData): Promise<void> {
-  await arquivarCartao(String(dadosForm.get('id') ?? ''));
-  revalidatePath('/ajustes');
-  // O cartão some do seletor de cartão em Despesa Fixa (mesma tela), do
-  // seletor de método de pagamento em Lançamentos, da lista em /cartoes e
-  // dos avisos do mês na Home (avisosDoMes → listarCartoes).
-  revalidatePath('/lancamentos/novo');
-  revalidatePath('/cartoes');
-  revalidatePath('/');
 }

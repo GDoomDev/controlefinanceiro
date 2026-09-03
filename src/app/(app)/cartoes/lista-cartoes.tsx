@@ -6,7 +6,7 @@ import type { Cartao } from '@/dados/cartoes';
 
 import { BotaoEditarCartao } from './botao-editar-cartao';
 import { BotaoExcluirCartao } from './botao-excluir-cartao';
-import estilos from './ajustes.module.css';
+import estilos from './gestao.module.css';
 
 export function ListaCartoes({
   cartoesIniciais,

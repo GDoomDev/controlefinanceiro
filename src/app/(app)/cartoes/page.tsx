@@ -6,7 +6,14 @@ import { competenciaDe, dataCivilEm, formatarDataCivil } from '@/dominio/data';
 import { janelaDeFaturas } from '@/dominio/fatura';
 import { formatarBRL } from '@/dominio/dinheiro';
 
-import { acaoFecharFatura, acaoPagarFatura } from './acoes';
+import {
+  acaoFecharFatura,
+  acaoPagarFatura,
+  acaoCriarCartao,
+  acaoEditarCartao,
+  acaoArquivarCartao,
+} from './acoes';
+import { ListaCartoes } from './lista-cartoes';
 
 export default async function Cartoes({
   searchParams,
@@ -42,11 +49,14 @@ export default async function Cartoes({
     <>
       <h1>Cartões</h1>
 
-      {cartoes.length === 0 ? (
-        <p style={{ fontSize: 'var(--fonte-tamanho-subtitulo)', color: 'var(--cor-texto-secundario)' }}>
-          Nenhum cartão cadastrado. Crie um em Ajustes.
-        </p>
-      ) : (
+      <ListaCartoes
+        cartoesIniciais={cartoes}
+        acao={acaoCriarCartao}
+        acaoEditar={acaoEditarCartao}
+        acaoExcluir={acaoArquivarCartao}
+      />
+
+      {cartoes.length === 0 ? null : (
         <>
           {mostrarTodas ? (
             <p style={{ fontSize: 12, marginTop: 0 }}>

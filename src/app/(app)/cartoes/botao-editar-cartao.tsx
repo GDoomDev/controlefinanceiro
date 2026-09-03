@@ -4,7 +4,7 @@ import { useRef } from 'react';
 
 import type { Cartao } from '@/dados/cartoes';
 
-import estilos from './ajustes.module.css';
+import estilos from './gestao.module.css';
 
 export function BotaoEditarCartao({
   cartao,
