@@ -11,6 +11,7 @@ import {
   acaoRemoverAlocacao,
   acaoCriarCategoria,
   acaoExcluirCategoria,
+  acaoCriarSubcategoria,
   acaoEditarSubcategoria,
   acaoArquivarSubcategoria,
 } from './acoes';
@@ -43,6 +44,7 @@ export default async function Orcamentos({
         ocupados={ocupados}
         acaoCriar={acaoCriarCategoria}
         acaoExcluir={acaoExcluirCategoria}
+        acaoCriarSubcategoria={acaoCriarSubcategoria}
         acaoEditarSubcategoria={acaoEditarSubcategoria}
         acaoArquivarSubcategoria={acaoArquivarSubcategoria}
       />

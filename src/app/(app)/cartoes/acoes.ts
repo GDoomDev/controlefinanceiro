@@ -25,6 +25,8 @@ export async function acaoCriarCartao(dadosForm: FormData): Promise<void> {
     diaVencimento: Number(dadosForm.get('diaVencimento')),
   });
   revalidatePath('/cartoes');
+  // /lancamentos precisa revalidar: a seção Despesas fixas ali mostra/seleciona categorias, subcategorias e cartões.
+  revalidatePath('/lancamentos');
 }
 
 export async function acaoEditarCartao(dadosForm: FormData): Promise<void> {
@@ -35,6 +37,8 @@ export async function acaoEditarCartao(dadosForm: FormData): Promise<void> {
   });
   revalidatePath('/cartoes');
   revalidatePath('/');
+  // /lancamentos precisa revalidar: a seção Despesas fixas ali mostra/seleciona categorias, subcategorias e cartões.
+  revalidatePath('/lancamentos');
 }
 
 export async function acaoArquivarCartao(dadosForm: FormData): Promise<void> {
@@ -42,4 +46,6 @@ export async function acaoArquivarCartao(dadosForm: FormData): Promise<void> {
   revalidatePath('/lancamentos/novo');
   revalidatePath('/cartoes');
   revalidatePath('/');
+  // /lancamentos precisa revalidar: a seção Despesas fixas ali mostra/seleciona categorias, subcategorias e cartões.
+  revalidatePath('/lancamentos');
 }

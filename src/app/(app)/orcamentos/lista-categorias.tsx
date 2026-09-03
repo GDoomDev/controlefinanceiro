@@ -16,6 +16,7 @@ export function ListaCategorias({
   ocupados,
   acaoCriar,
   acaoExcluir,
+  acaoCriarSubcategoria,
   acaoEditarSubcategoria,
   acaoArquivarSubcategoria,
 }: {
@@ -23,6 +24,7 @@ export function ListaCategorias({
   ocupados: SlotOcupadoProp[];
   acaoCriar: (dadosForm: FormData) => Promise<void>;
   acaoExcluir: (dadosForm: FormData) => Promise<void>;
+  acaoCriarSubcategoria: (dadosForm: FormData) => Promise<void>;
   acaoEditarSubcategoria: (dadosForm: FormData) => Promise<void>;
   acaoArquivarSubcategoria: (dadosForm: FormData) => Promise<void>;
 }) {
@@ -103,6 +105,22 @@ export function ListaCategorias({
                   </span>
                 )}
               </span>
+              <form
+                action={acaoCriarSubcategoria}
+                style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}
+              >
+                <input type="hidden" name="budgetCategoryId" value={c.id} />
+                <input
+                  name="nome"
+                  required
+                  className={estilos.entrada}
+                  placeholder="Nova subcategoria"
+                  style={{ width: 140 }}
+                />
+                <button type="submit" className={estilos.botao}>
+                  + subcategoria
+                </button>
+              </form>
               <BotaoExcluirCategoria
                 categoriaId={c.id}
                 categoriaNome={c.nome}

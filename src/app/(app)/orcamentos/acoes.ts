@@ -33,6 +33,9 @@ export async function acaoCriarSubcategoria(dadosForm: FormData): Promise<void> 
     nome: String(dadosForm.get('nome') ?? ''),
   });
   revalidatePath('/orcamentos');
+  // /lancamentos precisa revalidar: a seção Despesas fixas ali mostra/seleciona categorias, subcategorias e cartões.
+  revalidatePath('/lancamentos');
+  revalidatePath('/lancamentos/novo');
 }
 
 export async function acaoEditarSubcategoria(dadosForm: FormData): Promise<void> {
@@ -40,12 +43,16 @@ export async function acaoEditarSubcategoria(dadosForm: FormData): Promise<void>
     nome: String(dadosForm.get('nome') ?? ''),
   });
   revalidatePath('/orcamentos');
+  // /lancamentos precisa revalidar: a seção Despesas fixas ali mostra/seleciona categorias, subcategorias e cartões.
+  revalidatePath('/lancamentos');
   revalidatePath('/lancamentos/novo');
 }
 
 export async function acaoArquivarSubcategoria(dadosForm: FormData): Promise<void> {
   await arquivarSubcategoria(String(dadosForm.get('id') ?? ''));
   revalidatePath('/orcamentos');
+  // /lancamentos precisa revalidar: a seção Despesas fixas ali mostra/seleciona categorias, subcategorias e cartões.
+  revalidatePath('/lancamentos');
   revalidatePath('/lancamentos/novo');
 }
 
@@ -54,6 +61,8 @@ export async function acaoExcluirCategoria(dadosForm: FormData): Promise<void> {
   revalidatePath('/orcamentos');
   revalidatePath('/');
   revalidatePath('/areas');
+  // /lancamentos precisa revalidar: a seção Despesas fixas ali mostra/seleciona categorias, subcategorias e cartões.
+  revalidatePath('/lancamentos');
   revalidatePath('/lancamentos/novo');
 }
 
