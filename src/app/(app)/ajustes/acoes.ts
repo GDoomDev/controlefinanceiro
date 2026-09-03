@@ -10,7 +10,7 @@ import {
   editarSubcategoria,
   arquivarSubcategoria,
 } from '@/dados/categorias';
-import { criarCartao } from '@/dados/cartoes';
+import { criarCartao, editarCartao, arquivarCartao } from '@/dados/cartoes';
 import { emCentavos } from '@/dominio/dinheiro';
 import type { MetodoPagamento } from '@/dominio/lancamento';
 import {
@@ -124,5 +124,22 @@ export async function acaoExcluirCategoria(dadosForm: FormData): Promise<void> {
   revalidatePath('/');
   revalidatePath('/areas');
   revalidatePath('/orcamentos');
+  revalidatePath('/lancamentos/novo');
+}
+
+export async function acaoEditarCartao(dadosForm: FormData): Promise<void> {
+  await editarCartao(String(dadosForm.get('id') ?? ''), {
+    nome: String(dadosForm.get('nome') ?? ''),
+    diaFechamento: Number(dadosForm.get('diaFechamento')),
+    diaVencimento: Number(dadosForm.get('diaVencimento')),
+  });
+  revalidatePath('/ajustes');
+}
+
+export async function acaoArquivarCartao(dadosForm: FormData): Promise<void> {
+  await arquivarCartao(String(dadosForm.get('id') ?? ''));
+  revalidatePath('/ajustes');
+  // O cartão some do seletor de cartão em Despesa Fixa (mesma tela) e do
+  // seletor de método de pagamento em Lançamentos.
   revalidatePath('/lancamentos/novo');
 }

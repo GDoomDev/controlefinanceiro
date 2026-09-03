@@ -4,6 +4,8 @@ import { listarRecorrentes } from '@/dados/recorrentes';
 import { formatarBRL } from '@/dominio/dinheiro';
 
 import {
+  acaoEditarCartao,
+  acaoArquivarCartao,
   acaoCriarCartao,
   acaoCriarCategoria,
   acaoCriarSubcategoria,
@@ -15,6 +17,7 @@ import {
   acaoArquivarSubcategoria,
 } from './acoes';
 import { ListaCategorias } from './lista-categorias';
+import { ListaCartoes } from './lista-cartoes';
 import estilos from './ajustes.module.css';
 
 export default async function Ajustes() {
@@ -86,69 +89,12 @@ export default async function Ajustes() {
 
       <section className={estilos.secao}>
         <div className={estilos.titulo}>Cartões</div>
-
-        <form action={acaoCriarCartao} className={estilos.linha}>
-          <div className={estilos.campo}>
-            <label className={estilos.rotulo} htmlFor="cartao-nome">
-              Nome
-            </label>
-            <input
-              id="cartao-nome"
-              name="nome"
-              required
-              className={estilos.entrada}
-              placeholder="Nubank"
-            />
-          </div>
-          <div className={estilos.campo}>
-            <label className={estilos.rotulo} htmlFor="cartao-fecha">
-              Fecha dia
-            </label>
-            <input
-              id="cartao-fecha"
-              name="diaFechamento"
-              type="number"
-              min={1}
-              max={31}
-              required
-              className={estilos.entrada}
-              style={{ width: 80 }}
-            />
-          </div>
-          <div className={estilos.campo}>
-            <label className={estilos.rotulo} htmlFor="cartao-vence">
-              Vence dia
-            </label>
-            <input
-              id="cartao-vence"
-              name="diaVencimento"
-              type="number"
-              min={1}
-              max={31}
-              required
-              className={estilos.entrada}
-              style={{ width: 80 }}
-            />
-          </div>
-          <button type="submit" className={estilos.botao}>
-            Criar cartão
-          </button>
-        </form>
-
-        <div className={estilos.lista}>
-          {cartoes.length === 0 ? (
-            <div className={estilos.vazio}>Nenhum cartão cadastrado ainda.</div>
-          ) : (
-            cartoes.map((c) => (
-              <div key={c.id} className={estilos.item}>
-                <strong>{c.nome}</strong>
-                <span className={estilos.subs}>
-                  fecha dia {c.diaFechamento} · vence dia {c.diaVencimento}
-                </span>
-              </div>
-            ))
-          )}
-        </div>
+        <ListaCartoes
+          cartoesIniciais={cartoes}
+          acao={acaoCriarCartao}
+          acaoEditar={acaoEditarCartao}
+          acaoExcluir={acaoArquivarCartao}
+        />
       </section>
 
       <section className={estilos.secao}>

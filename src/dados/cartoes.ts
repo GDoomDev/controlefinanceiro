@@ -70,6 +70,38 @@ export async function criarCartao(
   });
 }
 
+export async function editarCartao(
+  id: string,
+  dados: { nome: string; diaFechamento: number; diaVencimento: number },
+  cliente: ClientePrisma = prisma,
+): Promise<void> {
+  const nome = dados.nome.trim();
+  if (nome.length === 0) {
+    throw new Error('Nome do cartão não pode ser vazio');
+  }
+  validarDia('Dia de fechamento', dados.diaFechamento);
+  validarDia('Dia de vencimento', dados.diaVencimento);
+
+  await cliente.card.update({
+    where: { id },
+    data: {
+      nome,
+      diaFechamento: dados.diaFechamento,
+      diaVencimento: dados.diaVencimento,
+    },
+  });
+}
+
+export async function arquivarCartao(
+  id: string,
+  cliente: ClientePrisma = prisma,
+): Promise<void> {
+  await cliente.card.update({
+    where: { id },
+    data: { ativo: false },
+  });
+}
+
 /** Ponte entre a linha do banco e o tipo que o domínio espera. Pura. */
 export function regraDoCartao(cartao: Cartao): RegraCartao {
   return {
