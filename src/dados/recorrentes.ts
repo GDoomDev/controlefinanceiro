@@ -30,6 +30,8 @@ export interface RecorrenciaListada {
   descricao: string;
   valorCentavos: number;
   diaDoMes: number;
+  budgetCategoryId: string;
+  subcategoryId: string;
   metodo: MetodoPagamento;
   cardId: string | null;
   cartaoNome: string | null;
@@ -108,6 +110,71 @@ export async function criarRecorrencia(
   });
 }
 
+export interface EdicaoRecorrencia {
+  descricao: string;
+  valorCentavos: number;
+  diaDoMes: number;
+  budgetCategoryId: string;
+  subcategoryId: string;
+  metodo: MetodoPagamento;
+  cardId: string | null;
+}
+
+export async function editarRecorrencia(
+  id: string,
+  dados: EdicaoRecorrencia,
+  cliente: ClientePrisma = prisma,
+): Promise<void> {
+  const descricao = dados.descricao.trim();
+  if (descricao.length === 0) {
+    throw new Error('Descrição não pode ser vazia');
+  }
+  if (!Number.isInteger(dados.valorCentavos) || dados.valorCentavos <= 0) {
+    throw new Error(
+      `Valor deve ser inteiro positivo em centavos: ${dados.valorCentavos}`,
+    );
+  }
+  if (!Number.isInteger(dados.diaDoMes) || dados.diaDoMes < 1 || dados.diaDoMes > 31) {
+    throw new Error(`Dia do mês deve ser inteiro entre 1 e 31: ${dados.diaDoMes}`);
+  }
+
+  const subcategoria = await cliente.subcategory.findUnique({
+    where: { id: dados.subcategoryId },
+    select: { budgetCategoryId: true },
+  });
+  if (!subcategoria) {
+    throw new Error(`Subcategoria não encontrada: ${dados.subcategoryId}`);
+  }
+  if (subcategoria.budgetCategoryId !== dados.budgetCategoryId) {
+    throw new Error(
+      'A subcategoria informada pertence a outro orçamento — a hierarquia é estrita',
+    );
+  }
+
+  if (dados.metodo === 'CREDITO') {
+    if (!dados.cardId) {
+      throw new Error('Despesa fixa no crédito exige um cartão');
+    }
+    const cartao = await buscarCartao(dados.cardId, cliente);
+    if (!cartao) {
+      throw new Error(`Cartão não encontrado: ${dados.cardId}`);
+    }
+  }
+
+  await cliente.recurringExpense.update({
+    where: { id },
+    data: {
+      descricao,
+      valorCentavos: dados.valorCentavos,
+      diaDoMes: dados.diaDoMes,
+      budgetCategoryId: dados.budgetCategoryId,
+      subcategoryId: dados.subcategoryId,
+      metodo: dados.metodo,
+      cardId: dados.metodo === 'CREDITO' ? dados.cardId : null,
+    },
+  });
+}
+
 export async function listarRecorrentes(
   cliente: ClientePrisma = prisma,
 ): Promise<RecorrenciaListada[]> {
@@ -118,6 +185,8 @@ export async function listarRecorrentes(
       descricao: true,
       valorCentavos: true,
       diaDoMes: true,
+      budgetCategoryId: true,
+      subcategoryId: true,
       metodo: true,
       cardId: true,
       inicio: true,
@@ -134,6 +203,8 @@ export async function listarRecorrentes(
     descricao: r.descricao,
     valorCentavos: r.valorCentavos,
     diaDoMes: r.diaDoMes,
+    budgetCategoryId: r.budgetCategoryId,
+    subcategoryId: r.subcategoryId,
     metodo: r.metodo,
     cardId: r.cardId,
     cartaoNome: r.card?.nome ?? null,

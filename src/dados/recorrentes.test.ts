@@ -5,6 +5,7 @@ import { criarCategoria, criarSubcategoria } from './categorias';
 import { totalDaFatura } from './faturas';
 import {
   criarRecorrencia,
+  editarRecorrencia,
   encerrarRecorrencia,
   listarRecorrentes,
   materializarRecorrentes,
@@ -259,6 +260,154 @@ describe('criarRecorrencia', () => {
           tx,
         ),
       ).rejects.toThrow('Cartão não encontrado');
+    });
+  });
+});
+
+describe('editarRecorrencia', () => {
+  it('atualiza os campos e reflete na listagem', async () => {
+    await comRollback(async (tx) => {
+      const { categoria, sub } = await cenario(tx);
+      const { id } = await criarRecorrencia(
+        {
+          descricao: 'Streaming X',
+          valorCentavos: 2990,
+          diaDoMes: 10,
+          budgetCategoryId: categoria.id,
+          subcategoryId: sub.id,
+          metodo: 'PIX',
+          cardId: null,
+          inicio: '2099-01',
+        },
+        tx,
+      );
+
+      await editarRecorrencia(
+        id,
+        {
+          descricao: 'Streaming Y',
+          valorCentavos: 3990,
+          diaDoMes: 15,
+          budgetCategoryId: categoria.id,
+          subcategoryId: sub.id,
+          metodo: 'PIX',
+          cardId: null,
+        },
+        tx,
+      );
+
+      const lista = await listarRecorrentes(tx);
+      const r = lista.find((x) => x.id === id)!;
+      expect(r.descricao).toBe('Streaming Y');
+      expect(r.valorCentavos).toBe(3990);
+      expect(r.diaDoMes).toBe(15);
+    });
+  });
+
+  it('rejeita descrição vazia', async () => {
+    await comRollback(async (tx) => {
+      const { categoria, sub } = await cenario(tx);
+      const { id } = await criarRecorrencia(
+        {
+          descricao: 'Streaming X',
+          valorCentavos: 2990,
+          diaDoMes: 10,
+          budgetCategoryId: categoria.id,
+          subcategoryId: sub.id,
+          metodo: 'PIX',
+          cardId: null,
+          inicio: '2099-01',
+        },
+        tx,
+      );
+      await expect(
+        editarRecorrencia(
+          id,
+          {
+            descricao: '  ',
+            valorCentavos: 2990,
+            diaDoMes: 10,
+            budgetCategoryId: categoria.id,
+            subcategoryId: sub.id,
+            metodo: 'PIX',
+            cardId: null,
+          },
+          tx,
+        ),
+      ).rejects.toThrow();
+    });
+  });
+
+  it('rejeita subcategoria de outro orçamento', async () => {
+    await comRollback(async (tx) => {
+      const { categoria, sub } = await cenario(tx);
+      const outraCategoria = await criarCategoria({ nome: 'Lazer', corSlot: 5 }, tx);
+      const outraSub = await criarSubcategoria(
+        { budgetCategoryId: outraCategoria.id, nome: 'Cinema' },
+        tx,
+      );
+      const { id } = await criarRecorrencia(
+        {
+          descricao: 'Streaming X',
+          valorCentavos: 2990,
+          diaDoMes: 10,
+          budgetCategoryId: categoria.id,
+          subcategoryId: sub.id,
+          metodo: 'PIX',
+          cardId: null,
+          inicio: '2099-01',
+        },
+        tx,
+      );
+      await expect(
+        editarRecorrencia(
+          id,
+          {
+            descricao: 'Streaming X',
+            valorCentavos: 2990,
+            diaDoMes: 10,
+            budgetCategoryId: categoria.id,
+            subcategoryId: outraSub.id,
+            metodo: 'PIX',
+            cardId: null,
+          },
+          tx,
+        ),
+      ).rejects.toThrow();
+    });
+  });
+
+  it('exige cartão quando o método é crédito', async () => {
+    await comRollback(async (tx) => {
+      const { categoria, sub } = await cenario(tx);
+      const { id } = await criarRecorrencia(
+        {
+          descricao: 'Streaming X',
+          valorCentavos: 2990,
+          diaDoMes: 10,
+          budgetCategoryId: categoria.id,
+          subcategoryId: sub.id,
+          metodo: 'PIX',
+          cardId: null,
+          inicio: '2099-01',
+        },
+        tx,
+      );
+      await expect(
+        editarRecorrencia(
+          id,
+          {
+            descricao: 'Streaming X',
+            valorCentavos: 2990,
+            diaDoMes: 10,
+            budgetCategoryId: categoria.id,
+            subcategoryId: sub.id,
+            metodo: 'CREDITO',
+            cardId: null,
+          },
+          tx,
+        ),
+      ).rejects.toThrow();
     });
   });
 });

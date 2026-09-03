@@ -15,6 +15,7 @@ import { emCentavos } from '@/dominio/dinheiro';
 import type { MetodoPagamento } from '@/dominio/lancamento';
 import {
   criarRecorrencia,
+  editarRecorrencia,
   encerrarRecorrencia,
   pausarRecorrencia,
   retomarRecorrencia,
@@ -91,6 +92,28 @@ export async function acaoCriarRecorrencia(dadosForm: FormData): Promise<void> {
     metodo,
     cardId: metodo === 'CREDITO' && cardIdBruto ? cardIdBruto : null,
     inicio: String(dadosForm.get('inicio') ?? ''),
+  });
+  revalidatePath('/ajustes');
+}
+
+export async function acaoEditarRecorrencia(dadosForm: FormData): Promise<void> {
+  const metodo = String(dadosForm.get('metodo') ?? 'PIX') as MetodoPagamento;
+  const cardIdBruto = String(dadosForm.get('cardId') ?? '');
+  const subcategoryId = String(dadosForm.get('subcategoryId') ?? '');
+
+  const subcategoria = await buscarSubcategoria(subcategoryId);
+  if (!subcategoria) {
+    throw new Error(`Subcategoria não encontrada: ${subcategoryId}`);
+  }
+
+  await editarRecorrencia(String(dadosForm.get('id') ?? ''), {
+    descricao: String(dadosForm.get('descricao') ?? ''),
+    valorCentavos: emCentavos(Number(dadosForm.get('valor') ?? 0)),
+    diaDoMes: Number(dadosForm.get('diaDoMes')),
+    budgetCategoryId: subcategoria.budgetCategoryId,
+    subcategoryId,
+    metodo,
+    cardId: metodo === 'CREDITO' && cardIdBruto ? cardIdBruto : null,
   });
   revalidatePath('/ajustes');
 }
