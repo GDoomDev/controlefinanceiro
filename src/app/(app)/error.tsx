@@ -8,19 +8,19 @@ export default function ErroApp({
   reset: () => void;
 }) {
   return (
-    <div style={{ padding: 24 }}>
+    <div style={{ padding: 'var(--espaco-6)' }}>
       <h1>Algo deu errado</h1>
-      <p style={{ color: '#6b7280', fontSize: 14, marginBottom: 16 }}>
+      <p style={{ color: 'var(--cor-texto-secundario)', fontSize: 14, marginBottom: 'var(--espaco-4)' }}>
         {error.message || 'Ocorreu um erro inesperado.'}
       </p>
       <button
         onClick={() => reset()}
         style={{
-          background: '#111827',
-          color: '#fff',
+          background: 'var(--cor-texto)',
+          color: 'var(--cor-fundo)',
           border: 'none',
-          borderRadius: 8,
-          padding: '10px 16px',
+          borderRadius: 'var(--raio-controle)',
+          padding: 'var(--espaco-2) var(--espaco-4)',
           fontSize: 13,
           cursor: 'pointer',
         }}

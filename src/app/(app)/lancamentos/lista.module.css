@@ -2,8 +2,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: var(--espaco-3);
+  margin-bottom: var(--espaco-4);
   flex-wrap: wrap;
 }
 
@@ -11,54 +11,54 @@
   display: flex;
   gap: 6px;
   align-items: center;
-  font-size: 13px;
+  font-size: var(--fonte-tamanho-corpo);
 }
 
 .mesLink {
-  color: #6b7280;
+  color: var(--cor-texto-secundario);
   text-decoration: none;
-  padding: 4px 8px;
+  padding: var(--espaco-1) var(--espaco-2);
   border-radius: 6px;
 }
 
 .mesLink:hover {
-  background: #f3f4f6;
+  background: var(--cor-superficie-sutil);
 }
 
 .mesAtual {
   font-weight: 600;
-  color: #111827;
+  color: var(--cor-texto);
 }
 
 .novo {
-  background: #111827;
-  color: #fff;
-  border-radius: 8px;
-  padding: 8px 14px;
-  font-size: 13px;
+  background: var(--cor-texto);
+  color: var(--cor-fundo);
+  border-radius: var(--raio-controle);
+  padding: var(--espaco-2) 14px;
+  font-size: var(--fonte-tamanho-corpo);
   text-decoration: none;
 }
 
 .tabela {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: var(--fonte-tamanho-corpo);
 }
 
 .tabela th {
   text-align: left;
-  font-size: 10px;
+  font-size: var(--fonte-tamanho-rotulo);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: #9ca3af;
+  color: var(--cor-texto-mudo);
   font-weight: 500;
-  padding: 0 8px 8px;
-  border-bottom: 1px solid #e5e7eb;
+  padding: 0 var(--espaco-2) var(--espaco-2);
+  border-bottom: 1px solid var(--cor-borda);
 }
 
 .tabela td {
-  padding: 9px 8px;
-  border-bottom: 1px solid #f3f4f6;
+  padding: var(--espaco-2) var(--espaco-2);
+  border-bottom: 1px solid var(--cor-superficie-sutil);
 }
 
 .valor {
@@ -68,28 +68,28 @@
 }
 
 .meta {
-  color: #9ca3af;
-  font-size: 11.5px;
+  color: var(--cor-texto-mudo);
+  font-size: var(--fonte-tamanho-rotulo);
 }
 
 .total {
   margin-top: 14px;
-  font-size: 14px;
+  font-size: var(--fonte-tamanho-subtitulo);
   text-align: right;
 }
 
 .vazio {
   padding: 28px 14px;
   text-align: center;
-  color: #9ca3af;
-  font-size: 13px;
+  color: var(--cor-texto-mudo);
+  font-size: var(--fonte-tamanho-corpo);
 }
 
 .apagar {
   background: none;
   border: none;
-  color: #dc2626;
-  font-size: 11px;
+  color: var(--cor-status-perigo);
+  font-size: var(--fonte-tamanho-rotulo);
   cursor: pointer;
-  padding: 2px 6px;
+  padding: var(--espaco-1) 6px;
 }

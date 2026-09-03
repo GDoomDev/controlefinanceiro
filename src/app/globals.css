@@ -1,12 +1,134 @@
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Cor — base neutra */
+  --cor-fundo: #ffffff;
+  --cor-superficie: #f9fafb;
+  --cor-superficie-sutil: #f3f4f6;
+  --cor-borda: #e5e7eb;
+  --cor-borda-forte: #d1d5db;
+  --cor-texto: #111827;
+  --cor-texto-forte: #374151;
+  --cor-texto-secundario: #6b7280;
+  --cor-texto-mudo: #9ca3af;
+
+  /* Cor — destaque de marca (preenchimento sólido: FAB, botões primários) */
+  --cor-destaque: #2a78d6;
+  --cor-destaque-hover: #1e5aa8;
+  /* Uso como texto/link solto sobre o fundo da página — mesmo tom no claro,
+     mas precisa de uma variante mais clara no escuro (ver bloco dark) para
+     continuar legível; então já nasce como token próprio. */
+  --cor-destaque-texto: var(--cor-destaque);
+
+  /* Cor — status sólido (valores/barras: Painel, Fluxo) */
+  --cor-status-sucesso: #16a34a;
+  --cor-status-aviso: #d97706;
+  --cor-status-perigo: #dc2626;
+
+  /* Cor — ênfase adicional (usadas em mais de uma tela, tons próprios) */
+  --cor-aviso-banner: #b45309; /* preenchimento sólido: aviso offline */
+  --cor-aviso-texto-forte: #b45309; /* texto solto: "canceladas"/"parado" */
+  --cor-perigo-texto-forte: #b91c1c; /* texto de erro/perigo mais forte que --cor-status-perigo */
+
+  /* Cor — chips de severidade de aviso (4 tons × 4 papéis, já usados em
+     Painel/Estorno/Reembolsos) */
+  --cor-severidade-vermelho-fundo: #fef2f2;
+  --cor-severidade-vermelho-borda: #fecaca;
+  --cor-severidade-vermelho-borda-forte: var(--cor-status-perigo);
+  --cor-severidade-vermelho-texto: #991b1b;
+
+  --cor-severidade-amarelo-fundo: #fffbeb;
+  --cor-severidade-amarelo-borda: #fde68a;
+  --cor-severidade-amarelo-borda-forte: var(--cor-status-aviso);
+  --cor-severidade-amarelo-texto: #92400e;
+
+  --cor-severidade-azul-fundo: #eff6ff;
+  --cor-severidade-azul-borda: #bfdbfe;
+  --cor-severidade-azul-borda-forte: #2563eb;
+  --cor-severidade-azul-texto: #1e40af;
+
+  --cor-severidade-cinza-fundo: var(--cor-superficie);
+  --cor-severidade-cinza-borda: var(--cor-borda);
+  --cor-severidade-cinza-borda-forte: var(--cor-texto-mudo);
+  --cor-severidade-cinza-texto: var(--cor-texto-forte);
+
+  /* Cor — distintivos do Reembolsos (tom -100, mais saturado que os chips
+     de severidade acima — não são a mesma coisa, não reaproveitar) */
+  --cor-distintivo-amarelo-fundo: #fef3c7;
+  --cor-distintivo-verde-fundo: #dcfce7;
+  --cor-distintivo-verde-texto: #166534;
+  --cor-distintivo-azul-fundo: #dbeafe;
+
+  /* Tipografia */
+  --fonte-corpo: var(--font-inter), -apple-system, "Segoe UI", Roboto, sans-serif;
+  --fonte-tamanho-rotulo: 11px;
+  --fonte-tamanho-corpo: 13px;
+  --fonte-tamanho-subtitulo: 14px;
+  --fonte-tamanho-destaque: 20px;
+  --fonte-tamanho-heroi: 28px;
+
+  /* Raio */
+  --raio-fino: 4px;
+  --raio-controle: 8px;
+  --raio-card: 10px;
+  --raio-pilula: 999px;
+
+  /* Espaçamento (múltiplos de 4px) */
+  --espaco-1: 4px;
+  --espaco-2: 8px;
+  --espaco-3: 12px;
+  --espaco-4: 16px;
+  --espaco-5: 20px;
+  --espaco-6: 24px;
+  --espaco-8: 32px;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --cor-fundo: #0b0e14;
+    --cor-superficie: #12161f;
+    --cor-superficie-sutil: #1a1f2b;
+    --cor-borda: #262c3a;
+    --cor-borda-forte: #3a4152;
+    --cor-texto: #e8eaf0;
+    --cor-texto-forte: #c3cad9;
+    --cor-texto-secundario: #9aa3b5;
+    --cor-texto-mudo: #6b7386;
+
+    --cor-destaque: #2a78d6;
+    --cor-destaque-hover: #3f8bdc;
+    --cor-destaque-texto: #5b9be0;
+
+    --cor-status-sucesso: #3ecf7a;
+    --cor-status-aviso: #e5a53a;
+    --cor-status-perigo: #f0645c;
+
+    --cor-aviso-banner: #b45309;
+    --cor-aviso-texto-forte: #d2872f;
+    --cor-perigo-texto-forte: var(--cor-status-perigo);
+
+    --cor-severidade-vermelho-fundo: #2a1416;
+    --cor-severidade-vermelho-borda: #5c2626;
+    --cor-severidade-vermelho-borda-forte: var(--cor-status-perigo);
+    --cor-severidade-vermelho-texto: #f5a8a3;
+
+    --cor-severidade-amarelo-fundo: #2a2114;
+    --cor-severidade-amarelo-borda: #5c4a26;
+    --cor-severidade-amarelo-borda-forte: var(--cor-status-aviso);
+    --cor-severidade-amarelo-texto: #f0cf8a;
+
+    --cor-severidade-azul-fundo: #141f2a;
+    --cor-severidade-azul-borda: #26405c;
+    --cor-severidade-azul-borda-forte: #6ba3e8;
+    --cor-severidade-azul-texto: #a8cdf5;
+
+    --cor-severidade-cinza-fundo: var(--cor-superficie);
+    --cor-severidade-cinza-borda: var(--cor-borda);
+    --cor-severidade-cinza-borda-forte: var(--cor-texto-mudo);
+    --cor-severidade-cinza-texto: var(--cor-texto-forte);
+
+    --cor-distintivo-amarelo-fundo: #3d3016;
+    --cor-distintivo-verde-fundo: #163d23;
+    --cor-distintivo-verde-texto: #6fd696;
+    --cor-distintivo-azul-fundo: #16283d;
   }
 }
 
@@ -24,9 +146,9 @@ body {
   min-height: 100%;
   display: flex;
   flex-direction: column;
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  color: var(--cor-texto);
+  background: var(--cor-fundo);
+  font-family: var(--fonte-corpo);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

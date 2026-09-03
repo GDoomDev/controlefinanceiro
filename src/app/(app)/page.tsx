@@ -10,10 +10,10 @@ import { estaProximoDoLimite } from '@/dominio/painel';
 
 import estilos from './painel.module.css';
 
-const VERDE = '#16a34a';
-const AMBAR = '#d97706';
-const VERMELHO = '#dc2626';
-const CINZA = '#9ca3af';
+const VERDE = 'var(--cor-status-sucesso)';
+const AMBAR = 'var(--cor-status-aviso)';
+const VERMELHO = 'var(--cor-status-perigo)';
+const CINZA = 'var(--cor-texto-mudo)';
 
 const CLASSE_DA_SEVERIDADE: Record<Severidade, string> = {
   VERMELHO: estilos.avisoVermelho,

@@ -1,32 +1,32 @@
 .lista {
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-card);
   overflow: hidden;
-  margin-bottom: 24px;
+  margin-bottom: var(--espaco-6);
 }
 
 .item {
   display: block;
-  padding: 13px 15px;
-  font-size: 14px;
-  color: #111827;
+  padding: var(--espaco-3) var(--espaco-4);
+  font-size: var(--fonte-tamanho-subtitulo);
+  color: var(--cor-texto);
   text-decoration: none;
 }
 
 .item:hover {
-  background: #f9fafb;
+  background: var(--cor-superficie);
 }
 
 .item + .item {
-  border-top: 1px solid #f3f4f6;
+  border-top: 1px solid var(--cor-superficie-sutil);
 }
 
 .conta {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--cor-texto-secundario);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--espaco-2);
 }
 
 .sair {
@@ -35,7 +35,7 @@
   border: none;
   padding: 0;
   font-size: 12px;
-  color: #6b7280;
+  color: var(--cor-texto-secundario);
   cursor: pointer;
   text-decoration: underline;
   font-family: inherit;
