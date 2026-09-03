@@ -6,7 +6,7 @@ import type { Cartao } from '@/dados/cartoes';
 import type { CategoriaComSubs } from '@/dados/categorias';
 import type { RecorrenciaListada } from '@/dados/recorrentes';
 
-import estilos from './ajustes.module.css';
+import estilos from './gestao.module.css';
 
 export function BotaoEditarRecorrencia({
   recorrencia,

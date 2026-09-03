@@ -9,7 +9,7 @@ import { emCentavos, formatarBRL } from '@/dominio/dinheiro';
 import type { MetodoPagamento } from '@/dominio/lancamento';
 
 import { BotaoEditarRecorrencia } from './botao-editar-recorrencia';
-import estilos from './ajustes.module.css';
+import estilos from './gestao.module.css';
 
 /**
  * Escrita otimista: a despesa fixa aparece na lista assim que o formulário é

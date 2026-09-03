@@ -10,5 +10,4 @@ export const DESTINOS_SECUNDARIOS = [
   { href: '/reembolsos', rotulo: 'Reembolsos' },
   { href: '/receitas', rotulo: 'Receitas' },
   { href: '/cartoes', rotulo: 'Cartões' },
-  { href: '/ajustes', rotulo: 'Ajustes' },
 ];

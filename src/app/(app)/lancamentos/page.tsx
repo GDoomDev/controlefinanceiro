@@ -1,11 +1,20 @@
 import Link from 'next/link';
 import { revalidatePath } from 'next/cache';
 
+import { listarCartoes } from '@/dados/cartoes';
+import { listarCategorias } from '@/dados/categorias';
 import { competenciaDe, dataCivilEm, somarMeses } from '@/dominio/data';
 import { formatarBRL } from '@/dominio/dinheiro';
 import { apagarGrupo, apagarLancamento, listarLancamentos } from '@/dados/lancamentos';
-import { materializarRecorrentes } from '@/dados/recorrentes';
+import { listarRecorrentes, materializarRecorrentes } from '@/dados/recorrentes';
 
+import {
+  acaoCriarRecorrencia,
+  acaoEditarRecorrencia,
+  acaoEncerrarRecorrencia,
+  acaoAlternarRecorrencia,
+} from './acoes';
+import { ListaRecorrentes } from './lista-recorrentes';
 import estilos from './lista.module.css';
 
 export default async function Lancamentos({
@@ -18,7 +27,12 @@ export default async function Lancamentos({
 
   await materializarRecorrentes(competencia);
 
-  const lancamentos = await listarLancamentos(competencia);
+  const [lancamentos, categorias, cartoes, recorrentes] = await Promise.all([
+    listarLancamentos(competencia),
+    listarCategorias(),
+    listarCartoes(),
+    listarRecorrentes(),
+  ]);
   const total = lancamentos.reduce((a, l) => a + l.valorCentavos, 0);
 
   async function acaoApagar(dadosForm: FormData) {
@@ -126,6 +140,30 @@ export default async function Lancamentos({
           </div>
         </>
       )}
+
+      <details style={{ marginTop: 'var(--espaco-8)' }}>
+        <summary
+          style={{
+            cursor: 'pointer',
+            fontSize: 'var(--fonte-tamanho-subtitulo)',
+            fontWeight: 600,
+            marginBottom: 'var(--espaco-3)',
+          }}
+        >
+          Despesas fixas
+        </summary>
+        <div style={{ marginTop: 'var(--espaco-3)' }}>
+          <ListaRecorrentes
+            recorrentesIniciais={recorrentes}
+            categorias={categorias}
+            cartoes={cartoes}
+            acaoCriar={acaoCriarRecorrencia}
+            acaoEditar={acaoEditarRecorrencia}
+            acaoAlternar={acaoAlternarRecorrencia}
+            acaoEncerrar={acaoEncerrarRecorrencia}
+          />
+        </div>
+      </details>
     </>
   );
 }
