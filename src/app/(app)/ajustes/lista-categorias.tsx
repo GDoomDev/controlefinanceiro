@@ -1,5 +1,8 @@
 'use client';
 
+import { useOptimistic, useRef } from 'react';
+
+import type { CategoriaComSubs } from '@/dados/categorias';
 import { corDaCategoria } from '@/dominio/paleta';
 
 import { BotaoExcluirCategoria } from './botao-excluir-categoria';
@@ -7,7 +10,6 @@ import { BotaoEditarSubcategoria } from './botao-editar-subcategoria';
 import { BotaoExcluirSubcategoria } from './botao-excluir-subcategoria';
 import { SeletorDeCor, type SlotOcupadoProp } from './seletor-de-cor';
 import estilos from './ajustes.module.css';
-import type { CategoriaComSubs } from '@/dados/categorias';
 
 export function ListaCategorias({
   categoriasIniciais,
@@ -24,9 +26,31 @@ export function ListaCategorias({
   acaoEditarSubcategoria: (dadosForm: FormData) => Promise<void>;
   acaoArquivarSubcategoria: (dadosForm: FormData) => Promise<void>;
 }) {
+  const [categorias, adicionarOtimista] = useOptimistic(
+    categoriasIniciais,
+    (estado, nova: CategoriaComSubs) => [...estado, nova],
+  );
+  const formRef = useRef<HTMLFormElement>(null);
+
+  async function enviar(dadosForm: FormData) {
+    const corSlotBruto = String(dadosForm.get('corSlot') ?? '');
+    const corPersonalizadaBruta = String(dadosForm.get('corPersonalizada') ?? '');
+    adicionarOtimista({
+      id: `otimista-${Date.now()}`,
+      nome: String(dadosForm.get('nome') ?? ''),
+      ordem: categorias.length + 1,
+      corSlot: corSlotBruto ? Number(corSlotBruto) : null,
+      corPersonalizada: corPersonalizadaBruta || null,
+      arquivada: false,
+      subcategorias: [],
+    });
+    formRef.current?.reset();
+    await acaoCriar(dadosForm);
+  }
+
   return (
     <>
-      <form action={acaoCriar} className={estilos.linha}>
+      <form ref={formRef} action={enviar} className={estilos.linha}>
         <div className={estilos.campo}>
           <label className={estilos.rotulo} htmlFor="cat-nome">
             Nome
@@ -46,10 +70,10 @@ export function ListaCategorias({
       </form>
 
       <div className={estilos.lista}>
-        {categoriasIniciais.length === 0 ? (
+        {categorias.length === 0 ? (
           <div className={estilos.vazio}>Nenhum orçamento cadastrado ainda.</div>
         ) : (
-          categoriasIniciais.map((c) => (
+          categorias.map((c) => (
             <div key={c.id} className={estilos.item}>
               <span
                 className={estilos.cor}
