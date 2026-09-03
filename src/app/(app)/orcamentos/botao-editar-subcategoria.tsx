@@ -2,7 +2,7 @@
 
 import { useRef } from 'react';
 
-import estilos from './ajustes.module.css';
+import estilos from './gestao.module.css';
 
 /**
  * Botão + popup de edição, mesmo padrão do `<dialog>` nativo já usado por

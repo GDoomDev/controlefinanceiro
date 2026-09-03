@@ -3,7 +3,7 @@
 import { useState } from 'react';
 
 import { CORES } from '@/dominio/paleta';
-import estilos from './ajustes.module.css';
+import estilos from './gestao.module.css';
 
 export interface SlotOcupadoProp {
   slot: number;

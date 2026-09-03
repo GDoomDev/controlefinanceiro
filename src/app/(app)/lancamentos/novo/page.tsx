@@ -17,7 +17,7 @@ export default async function NovoLancamento() {
         <h1>Novo lançamento</h1>
         <p style={{ fontSize: 14, color: 'var(--cor-texto-secundario)' }}>
           Cadastre pelo menos um orçamento com uma subcategoria em{' '}
-          <Link href="/ajustes">Ajustes</Link> antes de lançar uma despesa.
+          <Link href="/orcamentos">Orçamentos</Link> antes de lançar uma despesa.
         </p>
       </>
     );

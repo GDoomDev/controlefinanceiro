@@ -2,21 +2,15 @@
 
 import { useRef } from 'react';
 
-import estilos from './ajustes.module.css';
+import estilos from './gestao.module.css';
 
-/**
- * Botão + popup de confirmação, usando o elemento `<dialog>` nativo do HTML
- * (sem biblioteca nova). Só existe como Client Component porque abrir/fechar
- * um `<dialog>` via `.showModal()`/`.close()` exige uma referência de DOM —
- * o formulário de dentro do popup continua sendo uma Server Action comum.
- */
-export function BotaoExcluirCategoria({
-  categoriaId,
-  categoriaNome,
+export function BotaoExcluirSubcategoria({
+  subcategoriaId,
+  subcategoriaNome,
   acao,
 }: {
-  categoriaId: string;
-  categoriaNome: string;
+  subcategoriaId: string;
+  subcategoriaNome: string;
   acao: (dadosForm: FormData) => Promise<void>;
 }) {
   const dialogoRef = useRef<HTMLDialogElement>(null);
@@ -25,23 +19,22 @@ export function BotaoExcluirCategoria({
     <>
       <button
         type="button"
-        className={estilos.botaoPerigo}
+        className={estilos.botaoTexto}
         onClick={() => dialogoRef.current?.showModal()}
       >
         excluir
       </button>
       <dialog ref={dialogoRef} className={estilos.dialogo}>
         <p>
-          Excluir <strong>{categoriaNome}</strong>?
+          Excluir <strong>{subcategoriaNome}</strong>?
         </p>
         <p className={estilos.dialogoAviso}>
-          Isso arquiva o orçamento: ele some de novas escolhas (novos
-          lançamentos, novos orçamentos, novas despesas fixas), mas nenhum
-          lançamento, alocação ou histórico já existente é apagado ou muda de
-          valor.
+          Isso arquiva a subcategoria: ela some de novas escolhas (novos
+          lançamentos, novas despesas fixas), mas nenhum lançamento ou
+          histórico já existente é apagado ou muda de valor.
         </p>
         <form action={acao} className={estilos.dialogoBotoes}>
-          <input type="hidden" name="id" value={categoriaId} />
+          <input type="hidden" name="id" value={subcategoriaId} />
           <button
             type="button"
             className={estilos.botaoCancelar}

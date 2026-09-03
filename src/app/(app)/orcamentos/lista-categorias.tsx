@@ -9,7 +9,7 @@ import { BotaoExcluirCategoria } from './botao-excluir-categoria';
 import { BotaoEditarSubcategoria } from './botao-editar-subcategoria';
 import { BotaoExcluirSubcategoria } from './botao-excluir-subcategoria';
 import { SeletorDeCor, type SlotOcupadoProp } from './seletor-de-cor';
-import estilos from './ajustes.module.css';
+import estilos from './gestao.module.css';
 
 export function ListaCategorias({
   categoriasIniciais,

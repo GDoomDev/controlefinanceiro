@@ -1,11 +1,20 @@
 import Link from 'next/link';
 
+import { listarCategorias, slotsEmUso } from '@/dados/categorias';
 import { orcamentosDoMes } from '@/dados/orcamentos';
 import { competenciaDe, dataCivilEm, somarMeses } from '@/dominio/data';
 import { formatarBRL } from '@/dominio/dinheiro';
 import { corDaCategoria } from '@/dominio/paleta';
 
-import { acaoDefinirAlocacao, acaoRemoverAlocacao } from './acoes';
+import {
+  acaoDefinirAlocacao,
+  acaoRemoverAlocacao,
+  acaoCriarCategoria,
+  acaoExcluirCategoria,
+  acaoEditarSubcategoria,
+  acaoArquivarSubcategoria,
+} from './acoes';
+import { ListaCategorias } from './lista-categorias';
 import estilos from './orcamentos.module.css';
 
 export default async function Orcamentos({
@@ -16,7 +25,11 @@ export default async function Orcamentos({
   const { mes } = await searchParams;
   const competencia = mes ?? competenciaDe(dataCivilEm(new Date()));
 
-  const orcamentos = await orcamentosDoMes(competencia);
+  const [orcamentos, categorias, ocupados] = await Promise.all([
+    orcamentosDoMes(competencia),
+    listarCategorias(),
+    slotsEmUso(),
+  ]);
   const total = orcamentos.reduce((a, o) => a + o.valorCentavos, 0);
 
   return (
@@ -24,6 +37,15 @@ export default async function Orcamentos({
       <div className={estilos.cabecalho}>
         <h1 style={{ margin: 0 }}>Orçamentos</h1>
       </div>
+
+      <ListaCategorias
+        categoriasIniciais={categorias}
+        ocupados={ocupados}
+        acaoCriar={acaoCriarCategoria}
+        acaoExcluir={acaoExcluirCategoria}
+        acaoEditarSubcategoria={acaoEditarSubcategoria}
+        acaoArquivarSubcategoria={acaoArquivarSubcategoria}
+      />
 
       <div className={estilos.meses}>
         <Link
@@ -48,8 +70,7 @@ export default async function Orcamentos({
 
       {orcamentos.length === 0 ? (
         <div className={estilos.vazio}>
-          Nenhum orçamento cadastrado. Crie categorias em{' '}
-          <Link href="/ajustes">Ajustes</Link>.
+          Nenhum orçamento cadastrado. Crie um orçamento acima.
         </div>
       ) : (
         <>

@@ -2,14 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
-import {
-  arquivarCategoria,
-  buscarSubcategoria,
-  criarCategoria,
-  criarSubcategoria,
-  editarSubcategoria,
-  arquivarSubcategoria,
-} from '@/dados/categorias';
+import { buscarSubcategoria } from '@/dados/categorias';
 import { criarCartao, editarCartao, arquivarCartao } from '@/dados/cartoes';
 import { emCentavos } from '@/dominio/dinheiro';
 import type { MetodoPagamento } from '@/dominio/lancamento';
@@ -20,46 +13,6 @@ import {
   pausarRecorrencia,
   retomarRecorrencia,
 } from '@/dados/recorrentes';
-
-export async function acaoCriarCategoria(dadosForm: FormData): Promise<void> {
-  const corSlotBruto = String(dadosForm.get('corSlot') ?? '');
-  const corPersonalizadaBruta = String(dadosForm.get('corPersonalizada') ?? '');
-
-  await criarCategoria({
-    nome: String(dadosForm.get('nome') ?? ''),
-    corSlot: corSlotBruto ? Number(corSlotBruto) : null,
-    corPersonalizada: corPersonalizadaBruta ? corPersonalizadaBruta : null,
-  });
-  revalidatePath('/ajustes');
-  revalidatePath('/');
-  revalidatePath('/areas');
-  revalidatePath('/orcamentos');
-  revalidatePath('/lancamentos/novo');
-}
-
-export async function acaoCriarSubcategoria(dadosForm: FormData): Promise<void> {
-  await criarSubcategoria({
-    budgetCategoryId: String(dadosForm.get('budgetCategoryId') ?? ''),
-    nome: String(dadosForm.get('nome') ?? ''),
-  });
-  revalidatePath('/ajustes');
-}
-
-export async function acaoEditarSubcategoria(dadosForm: FormData): Promise<void> {
-  await editarSubcategoria(String(dadosForm.get('id') ?? ''), {
-    nome: String(dadosForm.get('nome') ?? ''),
-  });
-  revalidatePath('/ajustes');
-  revalidatePath('/lancamentos/novo');
-}
-
-export async function acaoArquivarSubcategoria(dadosForm: FormData): Promise<void> {
-  await arquivarSubcategoria(String(dadosForm.get('id') ?? ''));
-  revalidatePath('/ajustes');
-  // A subcategoria some do seletor de Despesa Fixa (mesma tela) e do seletor de
-  // subcategoria em Lançamentos — ambos revalidados aqui.
-  revalidatePath('/lancamentos/novo');
-}
 
 export async function acaoCriarCartao(dadosForm: FormData): Promise<void> {
   await criarCartao({
@@ -138,17 +91,6 @@ export async function acaoAlternarRecorrencia(dadosForm: FormData): Promise<void
     await retomarRecorrencia(id);
   }
   revalidatePath('/ajustes');
-}
-
-export async function acaoExcluirCategoria(dadosForm: FormData): Promise<void> {
-  await arquivarCategoria(String(dadosForm.get('id') ?? ''));
-  revalidatePath('/ajustes');
-  // Toda tela que lista orçamentos ativos também precisa parar de oferecer
-  // esta categoria como opção.
-  revalidatePath('/');
-  revalidatePath('/areas');
-  revalidatePath('/orcamentos');
-  revalidatePath('/lancamentos/novo');
 }
 
 export async function acaoEditarCartao(dadosForm: FormData): Promise<void> {

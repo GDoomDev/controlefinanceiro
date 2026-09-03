@@ -2,8 +2,60 @@
 
 import { revalidatePath } from 'next/cache';
 
+import {
+  arquivarCategoria,
+  arquivarSubcategoria,
+  criarCategoria,
+  criarSubcategoria,
+  editarSubcategoria,
+} from '@/dados/categorias';
 import { definirAlocacao, removerAlocacao } from '@/dados/orcamentos';
 import { emCentavos } from '@/dominio/dinheiro';
+
+export async function acaoCriarCategoria(dadosForm: FormData): Promise<void> {
+  const corSlotBruto = String(dadosForm.get('corSlot') ?? '');
+  const corPersonalizadaBruta = String(dadosForm.get('corPersonalizada') ?? '');
+
+  await criarCategoria({
+    nome: String(dadosForm.get('nome') ?? ''),
+    corSlot: corSlotBruto ? Number(corSlotBruto) : null,
+    corPersonalizada: corPersonalizadaBruta ? corPersonalizadaBruta : null,
+  });
+  revalidatePath('/orcamentos');
+  revalidatePath('/');
+  revalidatePath('/areas');
+  revalidatePath('/lancamentos/novo');
+}
+
+export async function acaoCriarSubcategoria(dadosForm: FormData): Promise<void> {
+  await criarSubcategoria({
+    budgetCategoryId: String(dadosForm.get('budgetCategoryId') ?? ''),
+    nome: String(dadosForm.get('nome') ?? ''),
+  });
+  revalidatePath('/orcamentos');
+}
+
+export async function acaoEditarSubcategoria(dadosForm: FormData): Promise<void> {
+  await editarSubcategoria(String(dadosForm.get('id') ?? ''), {
+    nome: String(dadosForm.get('nome') ?? ''),
+  });
+  revalidatePath('/orcamentos');
+  revalidatePath('/lancamentos/novo');
+}
+
+export async function acaoArquivarSubcategoria(dadosForm: FormData): Promise<void> {
+  await arquivarSubcategoria(String(dadosForm.get('id') ?? ''));
+  revalidatePath('/orcamentos');
+  revalidatePath('/lancamentos/novo');
+}
+
+export async function acaoExcluirCategoria(dadosForm: FormData): Promise<void> {
+  await arquivarCategoria(String(dadosForm.get('id') ?? ''));
+  revalidatePath('/orcamentos');
+  revalidatePath('/');
+  revalidatePath('/areas');
+  revalidatePath('/lancamentos/novo');
+}
 
 export async function acaoDefinirAlocacao(dadosForm: FormData): Promise<void> {
   const bruto = String(dadosForm.get('valor') ?? '').replace(',', '.');
